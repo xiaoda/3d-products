@@ -1,0 +1,92 @@
+{
+  "files": [
+    {
+      "bytes": 73,
+      "path": ".prettierrc.json",
+      "sha256": "d7fa1c1dee12b930b45e1f8c465b07da95fa519cfd9e3e503c76dc762617b1fb"
+    },
+    {
+      "bytes": 6699,
+      "path": "index.html",
+      "sha256": "9eaf4b612cea81c8b15617e0cfa29eff4a6672ef8d4f74330fb483c63e06aaff"
+    },
+    {
+      "bytes": 40560,
+      "path": "package-lock.json",
+      "sha256": "9aeee91e287ff4fff8f54019ee25c63f49a936ae60e75c39b8a8076c03a62f70"
+    },
+    {
+      "bytes": 585,
+      "path": "package.json",
+      "sha256": "d3177c2b64c1b894980546914122a3f889b0b9524069dfcef9cbb9225f1f1bfa"
+    },
+    {
+      "bytes": 416,
+      "path": "src/config/product.ts",
+      "sha256": "1742efb8c985b30186e20fa967a2d91491ac3eadef6da640be5a10bda3abcc0b"
+    },
+    {
+      "bytes": 2007,
+      "path": "src/main.ts",
+      "sha256": "79d46981991cd689c79188b2d7727273acc0dccf69d067b6642eea25003426fc"
+    },
+    {
+      "bytes": 2929,
+      "path": "src/model/createCase.ts",
+      "sha256": "ac57bb282fef0bcbc81848309b9204e27e96397a70a9ef5e19d0443a1ffacb42"
+    },
+    {
+      "bytes": 2058,
+      "path": "src/model/createEarbud.ts",
+      "sha256": "74c591ce5cbd39f6df58501b11b16fb8cdf0ac1818690b58b3459cb728a5511a"
+    },
+    {
+      "bytes": 1397,
+      "path": "src/model/createProduct.ts",
+      "sha256": "72bfe8c81546a155ae8c0aa2fc6d975b6adc8d01c9886a7351f814be2e1cd4bb"
+    },
+    {
+      "bytes": 5843,
+      "path": "src/scene/createScene.ts",
+      "sha256": "51e889a8009011754a5c43628317c6f226fe26c035c340e1585e24b44c00f3d8"
+    },
+    {
+      "bytes": 611,
+      "path": "src/scene/framing.ts",
+      "sha256": "e9525770328e3c938af6a4dd5982ac8d03e2feb5c8162e6cf5a626850a5b3ba6"
+    },
+    {
+      "bytes": 620,
+      "path": "src/tests/framing.test.ts",
+      "sha256": "b2ab99884eea5b993c3dbb29ab0d8df0886f8491bf53e47fc9bd605a15904ee3"
+    },
+    {
+      "bytes": 3505,
+      "path": "src/tests/product.test.ts",
+      "sha256": "4a41345e149123475559a751f22de5b224982765a2f3f27d40d6e215c4d4b018"
+    },
+    {
+      "bytes": 1584,
+      "path": "src/ui/controls.ts",
+      "sha256": "aa8ae1b8cf2885c096611f7db05d862dc80d8392133dfb834406db5c3d267423"
+    },
+    {
+      "bytes": 12141,
+      "path": "src/ui/styles.css",
+      "sha256": "3cc923e35a1709cd054584ae72589c3f65b57e1223d885bce78deccbc04c252a"
+    },
+    {
+      "bytes": 426,
+      "path": "tsconfig.json",
+      "sha256": "3b87addef2b949754aae9e4d878121dc139b95e8c1f7df32338b20f5dbe52bcf"
+    },
+    {
+      "bytes": 353,
+      "path": "vite.config.ts",
+      "sha256": "d58867e44f61767026b539a0634793eab6ebe1e16feb0881c94d687a5b0a54da"
+    }
+  ],
+  "created": "2026-09-24T15:16:57.1074486+08:00",
+  "stage": "01",
+  "version": "0.1.0"
+}

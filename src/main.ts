@@ -1,0 +1,57 @@
+import './ui/styles.css';
+import { createScene } from './scene/createScene';
+import { connectControls, markView } from './ui/controls';
+
+const host = document.querySelector<HTMLElement>('#viewport')!;
+const loading = document.querySelector<HTMLElement>('#loading')!;
+const error = document.querySelector<HTMLElement>('#viewer-error')!;
+const status = document.querySelector<HTMLElement>('#render-status')!;
+const retry = document.querySelector<HTMLButtonElement>('#retry-button')!;
+let cleanup = () => {};
+
+function showError(message: string) {
+  loading.hidden = true;
+  error.hidden = false;
+  document.querySelector<HTMLElement>('#error-message')!.textContent = message;
+  status.textContent = '预览不可用';
+  document.querySelectorAll<HTMLButtonElement>('.viewer-toolbar button').forEach((button) => {
+    button.disabled = true;
+  });
+}
+
+retry.addEventListener('click', () => window.location.reload());
+
+try {
+  const scene = createScene(
+    host,
+    () => markView('manual'),
+    () => showError('图形上下文已丢失，请重新加载。本阶段尚未实现自动恢复。'),
+  );
+  const disconnect = connectControls(scene);
+  loading.hidden = true;
+  status.textContent = '实时三维 · 可交互';
+  document.documentElement.dataset.viewerReady = 'true';
+  cleanup = () => {
+    disconnect();
+    scene.dispose();
+  };
+  // 仅开发模式提供只读诊断入口，不暴露可修改场景的全局句柄。
+  if (import.meta.env.DEV) {
+    Object.defineProperty(window, '__stage01', {
+      value: { inspect: scene.inspect },
+      configurable: true,
+    });
+  }
+} catch (cause) {
+  console.error('三维预览初始化失败', cause);
+  showError('无法创建 WebGL 2 画布。请检查浏览器的图形加速设置，或换用支持 WebGL 2 的浏览器。');
+}
+
+window.addEventListener('pagehide', (event) => {
+  if (!event.persisted) cleanup();
+});
+if (import.meta.hot)
+  import.meta.hot.dispose(() => {
+    cleanup();
+    Reflect.deleteProperty(window, '__stage01');
+  });
