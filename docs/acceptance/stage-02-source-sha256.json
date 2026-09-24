@@ -1,0 +1,138 @@
+{
+  "version": "0.2.0",
+  "capturedAt": "2026-09-24T16:19:38.3495261+08:00",
+  "baseCommit": "e24eff0b71a2bb16fa6b6326929fed652488b6fe",
+  "status": "第二阶段提交前源码快照",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 59,
+      "sha256": "cc9abab41b76a31fb0568044011445a452b2c49919e1697f8e6eb080653a4b50"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 56,
+      "sha256": "bb6980def597cb0631a0b06638424ff5b1e23e3e3a977ea1eec2b4bc0487d7f6"
+    },
+    {
+      "path": ".prettierrc.json",
+      "bytes": 73,
+      "sha256": "d7fa1c1dee12b930b45e1f8c465b07da95fa519cfd9e3e503c76dc762617b1fb"
+    },
+    {
+      "path": "index.html",
+      "bytes": 7188,
+      "sha256": "d6131ed25c5d2a9b6b4a825af2682babc6ea2994dae4ec0a4d2662a4104ccd41"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 40560,
+      "sha256": "3fb5911b1a202671018db7fa0d8688360127c651fd0f6ce43f198c214fed6df9"
+    },
+    {
+      "path": "package.json",
+      "bytes": 585,
+      "sha256": "55ac645251a8338fee61bc308bc6d4cb6e0eb3a355006f9e247b737b64958309"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6372,
+      "sha256": "7c96e1655180b79f9f83363bbbcb048ef21acbf6f08823a965563a85e50bb3f9"
+    },
+    {
+      "path": "src/config/product.ts",
+      "bytes": 561,
+      "sha256": "9dead53e4321159d3a3e894c1f3288e034ae9ae01f3cd93ee7e3b6b0857b82c0"
+    },
+    {
+      "path": "src/debug/modelInspection.ts",
+      "bytes": 3050,
+      "sha256": "c3c394ef2a5276fdd569c3f4516a0aaade0d57c8c1ca92c6c945e41a0e9f117f"
+    },
+    {
+      "path": "src/main.ts",
+      "bytes": 2362,
+      "sha256": "3811bbb49fe973df434242c8cb4314f5ed5bc41ea16f4f23d71c0cb618fb2212"
+    },
+    {
+      "path": "src/model/createCase.ts",
+      "bytes": 3695,
+      "sha256": "7130f1579347ba503400392d2983f409e455ddc0b1423dafbe204e12befbece8"
+    },
+    {
+      "path": "src/model/createEarbud.ts",
+      "bytes": 2139,
+      "sha256": "0e5debe96290d21739cb5847dcbaaf2e9344582602d15d6dcce96bc0f673816d"
+    },
+    {
+      "path": "src/model/createProduct.ts",
+      "bytes": 2695,
+      "sha256": "4eadfcfe5438fc7c41126f4068f0fed2b09f53089c3ffae730f343ff399d220e"
+    },
+    {
+      "path": "src/model/details.ts",
+      "bytes": 6530,
+      "sha256": "70d8955acc9774aa970ce5b549d7bb161afe6df7dc7b53952e7df5e0dd2ec840"
+    },
+    {
+      "path": "src/model/geometry.ts",
+      "bytes": 7159,
+      "sha256": "8fdcb44372396c96bfe2a5580057835ba14bd4323bc7fe1773272a20e024f3f1"
+    },
+    {
+      "path": "src/model/profiles.ts",
+      "bytes": 3005,
+      "sha256": "376b9df806a95b79e1c9f0b5397ab16b8196a6a08576a5d683adf6d25d24b9f2"
+    },
+    {
+      "path": "src/scene/createScene.ts",
+      "bytes": 8869,
+      "sha256": "43a1624ea97372fbcdb20331a2c7859134055b78402e2b46a87cb7fef4cd622c"
+    },
+    {
+      "path": "src/scene/framing.ts",
+      "bytes": 611,
+      "sha256": "e9525770328e3c938af6a4dd5982ac8d03e2feb5c8162e6cf5a626850a5b3ba6"
+    },
+    {
+      "path": "src/tests/framing.test.ts",
+      "bytes": 620,
+      "sha256": "b2ab99884eea5b993c3dbb29ab0d8df0886f8491bf53e47fc9bd605a15904ee3"
+    },
+    {
+      "path": "src/tests/geometry.test.ts",
+      "bytes": 2172,
+      "sha256": "862cb38de2bfefdaeb2ba0d70f5ff0a899d9b37f8e6e16ba59c2957d216a6612"
+    },
+    {
+      "path": "src/tests/inspection.test.ts",
+      "bytes": 6250,
+      "sha256": "822461a27d301fdb8282b150c02bc3eb5c5955a86ccd47adeb8edeadd479811a"
+    },
+    {
+      "path": "src/tests/product.test.ts",
+      "bytes": 3893,
+      "sha256": "486d10f0f2bf32ad4a097761bf9d254498285c38aaa655ae3297f90a6f95e6e1"
+    },
+    {
+      "path": "src/ui/controls.ts",
+      "bytes": 1814,
+      "sha256": "3965f06b9eea9721cb32871995e943c0ea7cdc8d403437f57a882c66838521ec"
+    },
+    {
+      "path": "src/ui/styles.css",
+      "bytes": 13916,
+      "sha256": "f5420fd6b464e481dc923934f34666cf55aed58666208362ec31b362bcad975c"
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 426,
+      "sha256": "3b87addef2b949754aae9e4d878121dc139b95e8c1f7df32338b20f5dbe52bcf"
+    },
+    {
+      "path": "vite.config.ts",
+      "bytes": 353,
+      "sha256": "d58867e44f61767026b539a0634793eab6ebe1e16feb0881c94d687a5b0a54da"
+    }
+  ]
+}

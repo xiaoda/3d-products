@@ -241,6 +241,7 @@ main {
 }
 .view-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 3px;
 }
 .viewer-toolbar button {
@@ -736,5 +737,106 @@ noscript {
   }
   .zoom-buttons button {
     min-width: 40px;
+  }
+}
+
+.inspection-tag {
+  font-size: 9px;
+  font-weight: 400;
+  color: #697d61;
+  border: 1px solid #d4ddcc;
+  padding: 3px 5px;
+  border-radius: 3px;
+}
+.inspection-poses {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 18px;
+}
+.inspection-poses button {
+  font-size: 11px;
+  min-height: 34px;
+  border: 1px solid #d6dece;
+  background: #edf0e7;
+  color: #64705e;
+  border-radius: 3px;
+  padding: 5px 3px;
+}
+.inspection-poses button[aria-pressed='true'] {
+  background: #34543e;
+  color: white;
+  border-color: #34543e;
+}
+.angle-label {
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  color: #6d7864;
+  margin-bottom: 8px;
+}
+.angle-label output {
+  font-family: Consolas, monospace;
+}
+#lid-angle {
+  width: 100%;
+  margin: 0;
+  accent-color: #436448;
+  cursor: pointer;
+}
+.inspection-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 13px;
+  font-size: 10px;
+  color: #6b7762;
+}
+.inspection-options label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.inspection-options input {
+  margin: 0;
+  accent-color: #436448;
+}
+.inspection-note {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #8b947f;
+  margin-top: 12px;
+}
+@media (max-width: 1100px) {
+  .viewer-toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .view-buttons {
+    justify-content: center;
+  }
+  .viewer-toolbar button {
+    padding: 0 9px;
+  }
+}
+@media (max-width: 760px) {
+  .inspection-panel {
+    grid-column: 1/-1;
+    grid-row: 2;
+  }
+  .inspection-poses button {
+    min-height: 40px;
+  }
+  .inspection-options {
+    gap: 20px;
+    font-size: 11px;
+  }
+  .view-buttons {
+    width: 100%;
+    justify-content: center;
+  }
+  .viewer-toolbar {
+    gap: 6px;
   }
 }

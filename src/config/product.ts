@@ -7,5 +7,7 @@ export const PRODUCT = {
   variantLabel: '标准充电盒版',
   case: { width: 50.1, height: 46.2, depth: 21.2, seamHeight: 32.8, seamGap: 0.22 },
   earbud: { width: 18.3, height: 30.2, depth: 18.1 },
-  stage: 1,
+  // 图片推定的展示几何参数，不是官方机械图尺寸。
+  assembly: { seatX: 11.7, seatY: 28.6, hingeZ: -10.9, openAngle: 110 },
+  stage: 2,
 } as const;

@@ -14,7 +14,7 @@ describe('产品配置', () => {
   });
 });
 
-describe('基础白模', () => {
+describe('产品几何回归', () => {
   it('具有可独立变换的必需节点', () => {
     const { root, parts } = createProduct();
     expect(root.name).toBe('ProductRoot');
@@ -33,7 +33,8 @@ describe('基础白模', () => {
     const size = new Box3().setFromObject(group).getSize(new Vector3());
     expect(size.x).toBeCloseTo(mm(PRODUCT.case.width), 3);
     expect(size.y).toBeCloseTo(mm(PRODUCT.case.height), 3);
-    expect(size.z).toBeCloseTo(mm(PRODUCT.case.depth), 3);
+    // 指示灯表面保留微小偏移防止重叠，整体尺寸仍使用计划中的 1% 容差。
+    expect(Math.abs(size.z / mm(PRODUCT.case.depth) - 1)).toBeLessThan(0.01);
     disposeProduct(group);
   });
 
@@ -59,7 +60,10 @@ describe('基础白模', () => {
       expect(Array.from(position.array).every(Number.isFinite)).toBe(true);
       expect(Array.from(normal.array).every(Number.isFinite)).toBe(true);
       for (let i = 0; i < normal.count; i++) {
-        expect(new Vector3().fromBufferAttribute(normal, i).length()).toBeCloseTo(1, 3);
+        expect(
+          new Vector3().fromBufferAttribute(normal, i).length(),
+          `${object.name}:normal:${i}`,
+        ).toBeCloseTo(1, 3);
       }
       if (geometry.index) {
         for (const index of geometry.index.array) expect(index).toBeLessThan(position.count);
@@ -72,11 +76,14 @@ describe('基础白模', () => {
   it('固定分开展示姿态中耳机与盒体不重叠', () => {
     const { root, parts } = createProduct();
     root.updateMatrixWorld(true);
-    const box = new Box3().setFromObject(parts.caseAssembly);
-    const left = new Box3().setFromObject(parts.leftEarbud);
-    const right = new Box3().setFromObject(parts.rightEarbud);
-    expect(box.intersectsBox(left)).toBe(false);
-    expect(box.intersectsBox(right)).toBe(false);
+    // 开盖后整体 AABB 含盒体与盒盖之间的大量空空间，逐部件检查避免误报。
+    const left = new Box3().setFromObject(parts.leftEarbud, true);
+    const right = new Box3().setFromObject(parts.rightEarbud, true);
+    for (const part of [parts.caseBody, parts.caseLid]) {
+      const box = new Box3().setFromObject(part, true);
+      expect(box.intersectsBox(left), part.name).toBe(false);
+      expect(box.intersectsBox(right), part.name).toBe(false);
+    }
     expect(left.intersectsBox(right)).toBe(false);
     disposeProduct(root);
   });

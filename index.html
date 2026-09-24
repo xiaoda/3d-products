@@ -6,13 +6,13 @@
     <meta name="theme-color" content="#f5f5f1" />
     <meta
       name="description"
-      content="AirPods 5 程序化建模研究。第一阶段：基础白模、尺寸与空间关系验收。"
+      content="AirPods 5 程序化建模研究。第二阶段：连续曲面、内胆与装配检查。"
     />
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%232c5246'/%3E%3Cpath d='M12 12h16v16H12z' fill='none' stroke='%23e7ebdf' stroke-width='2'/%3E%3C/svg%3E"
     />
-    <title>AirPods 5 · 基础白模研究</title>
+    <title>AirPods 5 · 精修灰模研究</title>
   </head>
   <body>
     <header class="site-header">
@@ -20,7 +20,7 @@
         ><span class="brand-symbol" aria-hidden="true">◧</span> 产品研究室
         <span class="brand-divider">/</span> <span class="brand-project">三维产品实验</span></a
       >
-      <span class="stage-badge"><i aria-hidden="true"></i>阶段 01 · 基础白模</span>
+      <span class="stage-badge"><i aria-hidden="true"></i>阶段 02 · 几何精修</span>
     </header>
 
     <main>
@@ -29,19 +29,19 @@
           <p class="eyebrow">形体、比例与空间</p>
           <h1 id="page-title">AirPods 5<span>形体研究。</span></h1>
         </div>
-        <p class="heading-note">先看轮廓，再谈质感。<br />一份可旋转的三维草稿。</p>
+        <p class="heading-note">先看轮廓，再谈质感。<br />由截面生长的连续曲面。</p>
       </section>
 
       <div class="workspace">
-        <section class="viewer-shell" aria-label="三维白模展示台">
+        <section class="viewer-shell" aria-label="三维精修灰模展示台">
           <div class="viewer-topline">
             <span
               ><i class="live-dot" aria-hidden="true"></i
               ><span id="render-status">正在初始化</span></span
-            ><span class="mono">01 / 06</span>
+            ><span class="mono">02 / 06</span>
           </div>
           <div id="viewport" class="viewport">
-            <div id="loading" class="loading" role="status">正在构建基础形体…</div>
+            <div id="loading" class="loading" role="status">正在生成连续曲面与收纳结构…</div>
             <div id="viewer-error" class="viewer-error" role="alert" hidden>
               <strong>暂时无法启动三维预览</strong>
               <p id="error-message">请使用支持 WebGL 2 的浏览器。</p>
@@ -58,7 +58,13 @@
               </button>
               <button type="button" data-view="front" aria-pressed="false" disabled>正面</button>
               <button type="button" data-view="side" aria-pressed="false" disabled>侧面</button>
+              <button type="button" data-view="back" aria-pressed="false" disabled>背面</button>
               <button type="button" data-view="top" aria-pressed="false" disabled>顶部</button>
+              <button type="button" data-view="bottom" aria-pressed="false" disabled>底部</button
+              ><button type="button" data-view="interior" aria-pressed="false" disabled>内胆</button
+              ><button type="button" data-view="earbud" aria-pressed="false" disabled>
+                单耳特写
+              </button>
             </div>
             <div class="zoom-buttons" role="group" aria-label="缩放和重置">
               <button type="button" id="zoom-out" aria-label="缩小模型" title="缩小" disabled>
@@ -82,8 +88,8 @@
         <aside class="study-panel" aria-label="阶段说明与模型参数">
           <div class="panel-section stage-summary">
             <span class="section-index">当前阶段</span>
-            <h2>基础白模<span class="outlined-number" aria-hidden="true">01</span></h2>
-            <p>把复杂产品还原为基础形体。<br />本轮只确认比例与部件位置。</p>
+            <h2>几何精修<span class="outlined-number" aria-hidden="true">02</span></h2>
+            <p>连续曲面与真实深度凹槽。<br />本轮检查外形、细节与装配。</p>
           </div>
           <div class="panel-section">
             <h3>模型组成 <span class="muted mono">04</span></h3>
@@ -124,17 +130,19 @@
             <span class="scope-marker" aria-hidden="true">↳</span>
             <div>
               <strong>这不是最终模型</strong>
-              <p>精细曲面、网罩与内胆将在下一阶段制作。当前为固定分开展示，不含开合或取出动画。</p>
+              <p>
+                当前为中性灰模，不代表最终材质。细部尺寸为图片近似，先验收形体，再进入材质阶段。
+              </p>
             </div>
           </div>
         </aside>
       </div>
       <footer class="page-footer">
         <span>Three.js 程序化建模 <span class="footer-slash">/</span> 未使用外部产品模型</span
-        ><span>第一阶段 · 等待形体验收</span>
+        ><span>第二阶段 · 等待几何验收</span>
       </footer>
     </main>
-    <noscript>此展示需要启用 JavaScript。当前为基础白模阶段，包含充电盒与左右耳机。</noscript>
+    <noscript>此展示需要启用 JavaScript。当前为精修灰模阶段，包含充电盒与左右耳机。</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

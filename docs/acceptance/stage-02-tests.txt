@@ -1,0 +1,12 @@
+
+> airpods5-product-study@0.2.0 test
+> vitest --run
+
+
+ RUN  v5.0.1 D:/Projects-X/3D-Products
+
+
+ Test Files  4 passed (4)
+      Tests  23 passed (23)
+   Start at  16:05:49
+   Duration  5.26s (tests 95%, transform 3%, import 2%)

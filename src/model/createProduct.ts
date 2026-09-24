@@ -1,6 +1,9 @@
 import { Group, Material, Mesh } from 'three';
 import { createCase } from './createCase';
 import { createEarbud } from './createEarbud';
+import { PRODUCT, mm } from '../config/product';
+
+export type ProductPose = 'closed' | 'open' | 'separated';
 
 export function createProduct() {
   const root = new Group();
@@ -8,13 +11,8 @@ export function createProduct() {
   const caseModel = createCase();
   const leftEarbud = createEarbud('left');
   const rightEarbud = createEarbud('right');
-  // 固定展示布局，不是耳机取出动画，也不是实际收纳位置。
-  leftEarbud.position.set(-1.65, 6.7, 0.25);
-  leftEarbud.rotation.set(0.12, -0.38, 0.14);
-  rightEarbud.position.set(1.65, 7.0, -0.15);
-  rightEarbud.rotation.set(-0.06, 0.42, -0.18);
   root.add(caseModel.group, leftEarbud, rightEarbud);
-  return {
+  const product = {
     root,
     parts: {
       caseAssembly: caseModel.group,
@@ -23,8 +21,44 @@ export function createProduct() {
       lidPivot: caseModel.lidPivot,
       leftEarbud,
       rightEarbud,
+      caseInterior: caseModel.interior,
+      lidInterior: caseModel.lidInterior,
     },
   };
+  setProductPose(product, 'separated');
+  return product;
+}
+
+export type ProductModel = ReturnType<typeof createProduct>;
+
+export function setLidAngle(product: { parts: { lidPivot: Group } }, degrees: number): void {
+  if (!Number.isFinite(degrees)) throw new RangeError('无效盒盖角度');
+  const angle = Math.max(0, Math.min(PRODUCT.assembly.openAngle, degrees));
+  product.parts.lidPivot.rotation.x = angle === 0 ? 0 : (-angle * Math.PI) / 180;
+}
+
+export function setProductPose(
+  product: { root: Group; parts: { leftEarbud: Group; rightEarbud: Group; lidPivot: Group } },
+  pose: ProductPose,
+): void {
+  const { leftEarbud: left, rightEarbud: right } = product.parts;
+  left.visible = true;
+  right.visible = true;
+  left.rotation.set(0, 0, 0);
+  right.rotation.set(0, 0, 0);
+  if (pose === 'separated') {
+    left.position.set(-1.5, 6.6, 0.6);
+    right.position.set(1.5, 6.9, 0.3);
+    left.rotation.set(0.1, 0.1, 0.18);
+    right.rotation.set(-0.04, -0.28, -0.15);
+    setLidAngle(product, PRODUCT.assembly.openAngle);
+  } else {
+    left.position.set(-mm(PRODUCT.assembly.seatX), mm(PRODUCT.assembly.seatY), 0);
+    right.position.set(mm(PRODUCT.assembly.seatX), mm(PRODUCT.assembly.seatY), 0);
+    setLidAngle(product, pose === 'open' ? PRODUCT.assembly.openAngle : 0);
+  }
+  product.root.userData.pose = pose;
+  product.root.updateMatrixWorld(true);
 }
 
 export function disposeProduct(root: Group): void {

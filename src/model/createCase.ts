@@ -1,75 +1,110 @@
-import {
-  BufferGeometry,
-  Float32BufferAttribute,
-  Group,
-  Mesh,
-  MeshStandardMaterial,
-  Vector3,
-} from 'three';
+import { Group, Mesh, MeshStandardMaterial } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { PRODUCT, mm } from '../config/product';
-
-type Vertex = { p: Vector3; n: Vector3 };
-
-/** 用同一个圆角盒切出两个粗模部件，保留一致外轮廓；内部封口留到阶段二。 */
-function sliceGeometry(source: BufferGeometry, height: number, keepAbove: boolean): BufferGeometry {
-  const geometry = source.index ? source.toNonIndexed() : source;
-  const positions = geometry.getAttribute('position');
-  const normals = geometry.getAttribute('normal');
-  const points: number[] = [];
-  const directions: number[] = [];
-  const inside = (v: Vertex) => (keepAbove ? v.p.y >= height : v.p.y <= height);
-  for (let i = 0; i < positions.count; i += 3) {
-    const triangle = [0, 1, 2].map((offset) => ({
-      p: new Vector3().fromBufferAttribute(positions, i + offset),
-      n: new Vector3().fromBufferAttribute(normals, i + offset),
-    }));
-    const polygon: Vertex[] = [];
-    for (let edge = 0; edge < 3; edge++) {
-      const a = triangle[edge];
-      const b = triangle[(edge + 1) % 3];
-      if (inside(a)) polygon.push(a);
-      if (inside(a) !== inside(b)) {
-        const t = (height - a.p.y) / (b.p.y - a.p.y);
-        polygon.push({ p: a.p.clone().lerp(b.p, t), n: a.n.clone().lerp(b.n, t).normalize() });
-      }
-    }
-    for (let j = 1; j < polygon.length - 1; j++) {
-      for (const v of [polygon[0], polygon[j], polygon[j + 1]]) {
-        points.push(v.p.x, v.p.y, v.p.z);
-        directions.push(v.n.x, v.n.y, v.n.z);
-      }
-    }
-  }
-  if (geometry !== source) geometry.dispose();
-  const result = new BufferGeometry();
-  result.setAttribute('position', new Float32BufferAttribute(points, 3));
-  result.setAttribute('normal', new Float32BufferAttribute(directions, 3));
-  return result;
-}
+import { createLoftGeometry, horizontalPlate, sectionContour, section } from './geometry';
+import { bodyProfile, lidProfile, caseExponent, wellProfile, lidWellProfile } from './profiles';
+import { createCaseDetails } from './details';
 
 export function createCase() {
-  const { width, height, depth, seamHeight, seamGap } = PRODUCT.case;
-  const w = mm(width),
-    h = mm(height),
-    d = mm(depth);
   const group = new Group();
   group.name = 'CaseAssembly';
-  const source = new RoundedBoxGeometry(w, h, d, 5, mm(10.2));
-  source.translate(0, h / 2, 0);
-  const material = new MeshStandardMaterial({ color: 0xd6d8d4, roughness: 0.74, metalness: 0 });
-  const body = new Mesh(sliceGeometry(source, mm(seamHeight - seamGap / 2), false), material);
+  const body = new Group();
   body.name = 'CaseBody';
-
+  const clay = new MeshStandardMaterial({ color: 0xd6dbd7, roughness: 0.74, metalness: 0 });
+  const interiorClay = new MeshStandardMaterial({ color: 0xbec8c0, roughness: 0.82, metalness: 0 });
+  const outer = new Mesh(
+    createLoftGeometry(bodyProfile, { exponent: caseExponent, capStart: false, capEnd: false }),
+    clay,
+  );
+  outer.name = 'CaseOuterShell';
+  body.add(outer);
+  const portProfile = [
+    section(0, 0.445, 0.15),
+    section(0.018, 0.43, 0.135),
+    section(0.22, 0.43, 0.135),
+  ];
+  const bottom = new Mesh(
+    horizontalPlate(
+      sectionContour(bodyProfile[0], caseExponent),
+      [sectionContour(portProfile[0], 4)],
+      0,
+      false,
+    ),
+    clay,
+  );
+  bottom.name = 'CaseBottom';
+  body.add(bottom);
+  const port = new Group();
+  port.name = 'USBPort';
+  const portMaterial = new MeshStandardMaterial({ color: 0x515d56, roughness: 0.85, metalness: 0 });
+  port.add(
+    new Mesh(
+      createLoftGeometry(portProfile, { exponent: 4, capStart: false, capEnd: true, inward: true }),
+      portMaterial,
+    ),
+  );
+  const tongue = new Mesh(new RoundedBoxGeometry(0.63, 0.035, 0.05, 2, 0.014), interiorClay);
+  tongue.position.y = 0.16;
+  port.add(tongue);
+  body.add(port);
+  const interior = new Group();
+  interior.name = 'CaseInterior';
+  const holes = [];
+  for (const side of [-1, 1] as const) {
+    const profile = wellProfile(side);
+    holes.push(sectionContour(profile.at(-1)!));
+    const well = new Mesh(
+      createLoftGeometry(profile, { inward: true, capEnd: false }),
+      interiorClay,
+    );
+    well.name = side === -1 ? 'LeftWell' : 'RightWell';
+    interior.add(well);
+  }
+  const deck = new Mesh(
+    horizontalPlate(
+      sectionContour(bodyProfile.at(-1)!, caseExponent),
+      holes,
+      bodyProfile.at(-1)!.y,
+    ),
+    clay,
+  );
+  deck.name = 'CaseRim';
+  interior.add(deck);
+  body.add(interior);
   const lidPivot = new Group();
   lidPivot.name = 'LidPivot';
-  lidPivot.position.set(0, mm(seamHeight), -d * 0.44);
-  const lidGeometry = sliceGeometry(source, mm(seamHeight + seamGap / 2), true);
-  lidGeometry.translate(0, -lidPivot.position.y, -lidPivot.position.z);
-  const lid = new Mesh(lidGeometry, material);
+  lidPivot.position.set(0, mm(PRODUCT.case.seamHeight), mm(PRODUCT.assembly.hingeZ));
+  const lid = new Group();
   lid.name = 'CaseLid';
+  const lidOuter = new Mesh(
+    createLoftGeometry(lidProfile, { exponent: caseExponent, capStart: false }),
+    clay,
+  );
+  lidOuter.name = 'LidOuterShell';
+  lid.add(lidOuter);
+  const lidInterior = new Group();
+  lidInterior.name = 'LidInterior';
+  const lidHoles = [];
+  for (const side of [-1, 1] as const) {
+    const profile = lidWellProfile(side);
+    lidHoles.push(sectionContour(profile[0]));
+    const well = new Mesh(
+      createLoftGeometry(profile, { inward: true, capStart: false }),
+      interiorClay,
+    );
+    well.name = side === -1 ? 'LeftLidWell' : 'RightLidWell';
+    lidInterior.add(well);
+  }
+  const lidRim = new Mesh(
+    horizontalPlate(sectionContour(lidProfile[0], caseExponent), lidHoles, lidProfile[0].y, false),
+    clay,
+  );
+  lidRim.name = 'LidRim';
+  lidInterior.add(lidRim);
+  lid.add(lidInterior);
+  lid.position.copy(lidPivot.position).multiplyScalar(-1);
   lidPivot.add(lid);
+  body.add(createCaseDetails());
   group.add(body, lidPivot);
-  source.dispose();
-  return { group, body, lid, lidPivot };
+  return { group, body, lid, lidPivot, interior, lidInterior };
 }

@@ -8,6 +8,8 @@ const error = document.querySelector<HTMLElement>('#viewer-error')!;
 const status = document.querySelector<HTMLElement>('#render-status')!;
 const retry = document.querySelector<HTMLButtonElement>('#retry-button')!;
 let cleanup = () => {};
+let disconnected = false;
+let removeInspection = () => {};
 
 function showError(message: string) {
   loading.hidden = true;
@@ -32,15 +34,22 @@ try {
   status.textContent = '实时三维 · 可交互';
   document.documentElement.dataset.viewerReady = 'true';
   cleanup = () => {
+    disconnected = true;
+    removeInspection();
     disconnect();
     scene.dispose();
   };
   // 仅开发模式提供只读诊断入口，不暴露可修改场景的全局句柄。
   if (import.meta.env.DEV) {
-    Object.defineProperty(window, '__stage01', {
+    Object.defineProperty(window, '__stage02', {
       value: { inspect: scene.inspect },
       configurable: true,
     });
+    import('./debug/modelInspection')
+      .then(({ mountModelInspection }) => {
+        if (!disconnected) removeInspection = mountModelInspection(scene);
+      })
+      .catch((cause) => console.error('几何检查面板加载失败', cause));
   }
 } catch (cause) {
   console.error('三维预览初始化失败', cause);
@@ -53,5 +62,5 @@ window.addEventListener('pagehide', (event) => {
 if (import.meta.hot)
   import.meta.hot.dispose(() => {
     cleanup();
-    Reflect.deleteProperty(window, '__stage01');
+    Reflect.deleteProperty(window, '__stage02');
   });
