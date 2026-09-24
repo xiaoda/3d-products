@@ -2,15 +2,17 @@ import { Group, Material, Mesh } from 'three';
 import { createCase } from './createCase';
 import { createEarbud } from './createEarbud';
 import { PRODUCT, mm } from '../config/product';
+import { createProductMaterials } from './materials';
 
 export type ProductPose = 'closed' | 'open' | 'separated';
 
 export function createProduct() {
   const root = new Group();
   root.name = 'ProductRoot';
-  const caseModel = createCase();
-  const leftEarbud = createEarbud('left');
-  const rightEarbud = createEarbud('right');
+  const materials = createProductMaterials();
+  const caseModel = createCase(materials);
+  const leftEarbud = createEarbud('left', materials);
+  const rightEarbud = createEarbud('right', materials);
   root.add(caseModel.group, leftEarbud, rightEarbud);
   const product = {
     root,

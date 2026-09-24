@@ -2,9 +2,10 @@ import {
   ACESFilmicToneMapping,
   Box3,
   Color,
-  DirectionalLight,
-  HemisphereLight,
+  Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
+  type Material,
   PerspectiveCamera,
   Scene,
   Sphere,
@@ -21,19 +22,11 @@ import {
   type ProductPose,
 } from '../model/createProduct';
 import { fitDistance } from './framing';
+import { CAMERA_PRESETS, SHOTS, type ShotName, type ViewName } from './cameraPresets';
+import { createStudioLighting, STUDIO } from './lighting';
 
-export type ViewName =
-  'perspective' | 'front' | 'side' | 'back' | 'top' | 'bottom' | 'interior' | 'earbud';
-const directions: Record<ViewName, Vector3> = {
-  perspective: new Vector3(6.5, 4.5, 17),
-  front: new Vector3(0, 0, 1),
-  side: new Vector3(1, 0, 0),
-  back: new Vector3(0, 0, -1),
-  top: new Vector3(0, 1, 0.0001),
-  bottom: new Vector3(0, -1, 0.0001),
-  interior: new Vector3(0, 1.7, 2.2),
-  earbud: new Vector3(-1.2, 0.3, 2.5),
-};
+export type { ViewName } from './cameraPresets';
+const directionFor = (view: ViewName) => new Vector3(...CAMERA_PRESETS[view].direction);
 
 export function createScene(
   host: HTMLElement,
@@ -44,29 +37,35 @@ export function createScene(
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
+  renderer.toneMappingExposure = STUDIO.exposure;
   renderer.setClearColor(new Color(0xffffff), 0);
   const canvas = renderer.domElement;
-  canvas.setAttribute('aria-label', 'AirPods 5 精修灰模，可旋转观察连续曲面、内胆与细节');
+  canvas.setAttribute('aria-label', 'AirPods 5 摄影棚展示，可旋转观察塑料、金属与网罩材质');
   canvas.setAttribute('role', 'img');
   host.append(canvas);
   const scene = new Scene(),
     product = createProduct(),
     { root, parts } = product;
   scene.add(root);
-  // 沿用基础照明：不在几何阶段引入 HDR、贴图、金属材质或后处理。
-  scene.add(new HemisphereLight(0xffffff, 0x69725d, 2.1));
-  const key = new DirectionalLight(0xffffff, 3);
-  key.position.set(-5, 10, 8);
-  const fill = new DirectionalLight(0xedf0ff, 1.4);
-  fill.position.set(7, 4, -4);
-  scene.add(key, fill);
-  const clay = new MeshStandardMaterial({ color: 0xcbd2cc, roughness: 0.8, metalness: 0 });
-  const wire = new MeshStandardMaterial({
+  const originalMaterials = new Map<Mesh, Material | Material[]>();
+  root.traverse((object) => {
+    if (!(object instanceof Mesh)) return;
+    originalMaterials.set(object, object.material);
+    // 微小网罩不参与投影，防止密网格阴影摩尔纹；主壳和槽壁提供几何阴影。
+    object.castShadow =
+      /Shell|Well|Rim|Bottom/.test(object.name) && !/Speaker|Sensor|Vent|Mic/.test(object.name);
+    object.receiveShadow = !/Lattice|Sensor/.test(object.name);
+  });
+  const studio = createStudioLighting(renderer, scene);
+  const clay = new MeshStandardMaterial({
+    color: 0xb8b9b6,
+    roughness: 0.85,
+    metalness: 0,
+    envMapIntensity: 0.5,
+  });
+  const wire = new MeshBasicMaterial({
     color: 0x647d6d,
     wireframe: true,
-    roughness: 1,
-    metalness: 0,
   });
   const sphere = new Sphere(),
     camera = new PerspectiveCamera(32, 1, 0.1, 150);
@@ -81,8 +80,10 @@ export function createScene(
   let frameDistance = 20,
     disposed = false,
     raf = 0,
-    pose: ProductPose | 'custom' = 'separated',
+    pose: ProductPose | 'custom' = 'open',
     view: ViewName | 'manual' = 'perspective';
+  let shot: ShotName | null = null;
+  let frameScale = 1;
   // 构图对象独立于相机预设：手动旋转后缩放窗口仍保持单耳/内胆聚焦。
   let focus: 'product' | 'case' | 'earbud' = 'product';
   let hideEarbuds = false,
@@ -90,16 +91,21 @@ export function createScene(
     uniformGray = false;
 
   function notify() {
+    studio.markDirty();
     host.dispatchEvent(new CustomEvent('modelchange'));
   }
   function frame(direction: Vector3) {
     const target =
-      focus === 'earbud' ? parts.rightEarbud : focus === 'case' ? parts.caseAssembly : root;
+      focus === 'earbud'
+        ? parts.rightEarbud
+        : focus === 'case' || hideEarbuds
+          ? parts.caseAssembly
+          : root;
     new Box3().setFromObject(target, true).getBoundingSphere(sphere);
     const damping = controls.enableDamping;
     controls.enableDamping = false;
     controls.update();
-    frameDistance = fitDistance(sphere.radius, camera.aspect, camera.fov);
+    frameDistance = fitDistance(sphere.radius, camera.aspect, camera.fov) * frameScale;
     controls.minDistance = Math.max(sphere.radius * 1.5, frameDistance * 0.56);
     controls.maxDistance = frameDistance * 1.8;
     controls.target.copy(sphere.center);
@@ -115,7 +121,9 @@ export function createScene(
     parts.rightEarbud.visible = focus === 'earbud' || !hideEarbuds;
   }
   function snapView(next: ViewName) {
+    shot = null;
     view = next;
+    frameScale = CAMERA_PRESETS[next].distanceScale;
     focus = next === 'earbud' ? 'earbud' : next === 'interior' ? 'case' : 'product';
     if (focus === 'earbud') hideEarbuds = false;
     if (view === 'interior') {
@@ -124,7 +132,7 @@ export function createScene(
       hideEarbuds = true;
     } else if (view !== 'earbud') hideEarbuds = false;
     showParts();
-    frame(directions[next]);
+    frame(directionFor(next));
     notify();
   }
   function setPose(next: ProductPose) {
@@ -132,6 +140,14 @@ export function createScene(
     hideEarbuds = false;
     setProductPose(product, next);
     snapView('perspective');
+  }
+  function setShot(next: ShotName) {
+    const preset = SHOTS[next];
+    setProductPose(product, preset.pose);
+    pose = preset.pose;
+    snapView(preset.view);
+    shot = next;
+    notify();
   }
   function resize() {
     const width = host.clientWidth,
@@ -143,7 +159,7 @@ export function createScene(
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
     if (sphere.radius > 0) {
-      frame(direction.lengthSq() ? direction : directions.perspective);
+      frame(direction.lengthSq() ? direction : directionFor('perspective'));
       const distance = Math.max(
         controls.minDistance,
         Math.min(controls.maxDistance, frameDistance * (ratio || 1)),
@@ -151,7 +167,7 @@ export function createScene(
       camera.position
         .copy(controls.target)
         .addScaledVector(
-          direction.lengthSq() ? direction : directions.perspective.clone().normalize(),
+          direction.lengthSq() ? direction : directionFor('perspective').normalize(),
           distance,
         );
       controls.update();
@@ -160,9 +176,10 @@ export function createScene(
   const observer = new ResizeObserver(resize);
   observer.observe(host);
   resize();
-  snapView('perspective');
+  setShot('open');
   const handleManual = () => {
     view = 'manual';
+    shot = null;
     onManualView();
     notify();
   };
@@ -170,6 +187,8 @@ export function createScene(
   function tick() {
     if (disposed || document.hidden) return;
     controls.update();
+    studio.updateFloor(camera.position, focus !== 'earbud' && !wireframe);
+    studio.renderContactShadow();
     renderer.render(scene, camera);
     raf = requestAnimationFrame(tick);
   }
@@ -187,9 +206,11 @@ export function createScene(
   tick();
   return {
     setView: snapView,
+    setShot,
     setPose,
     setLidAngle(degrees: number) {
       pose = 'custom';
+      shot = null;
       setLidAngle(product, degrees);
       root.updateMatrixWorld(true);
       frame(camera.position.clone().sub(controls.target));
@@ -201,21 +222,23 @@ export function createScene(
         view = 'perspective';
       }
       hideEarbuds = hidden;
+      shot = null;
       showParts();
-      frame(directions[view === 'manual' ? 'perspective' : view]);
+      frame(directionFor(view === 'manual' ? 'perspective' : view));
       notify();
     },
     setInspectionMaterial(options: { wireframe?: boolean; uniformGray?: boolean }) {
       wireframe = options.wireframe ?? wireframe;
       uniformGray = options.uniformGray ?? uniformGray;
-      scene.overrideMaterial = wireframe ? wire : uniformGray ? clay : null;
+      for (const [mesh, material] of originalMaterials)
+        mesh.material = wireframe ? wire : uniformGray ? clay : material;
       notify();
     },
     reset() {
       wireframe = false;
       uniformGray = false;
-      scene.overrideMaterial = null;
-      setPose('separated');
+      for (const [mesh, material] of originalMaterials) mesh.material = material;
+      setShot('open');
     },
     zoom(factor: number) {
       const offset = camera.position.clone().sub(controls.target);
@@ -229,12 +252,22 @@ export function createScene(
     inspect() {
       return {
         pose,
+        shot,
         view,
         focus,
         lidAngle: (-parts.lidPivot.rotation.x * 180) / Math.PI,
         hideEarbuds,
         wireframe,
         uniformGray,
+        studio: {
+          ...studio.inspect(),
+          exposure: renderer.toneMappingExposure,
+          environment: scene.environment?.name,
+          environmentIntensity: scene.environmentIntensity,
+          shadowMap: renderer.shadowMap.enabled,
+        },
+        materials: [...new Set([...originalMaterials.values()].flat().map((m) => m.name))],
+        resources: { ...renderer.info.memory },
         position: camera.position.toArray(),
         target: controls.target.toArray(),
         distance: camera.position.distanceTo(controls.target),
@@ -256,7 +289,10 @@ export function createScene(
       controls.dispose();
       document.removeEventListener('visibilitychange', onVisibility);
       canvas.removeEventListener('webglcontextlost', handleLost);
+      for (const [mesh, material] of originalMaterials) mesh.material = material;
+      originalMaterials.clear();
       disposeProduct(root);
+      studio.dispose();
       clay.dispose();
       wire.dispose();
       renderer.dispose();

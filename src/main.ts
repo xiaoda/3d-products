@@ -16,9 +16,13 @@ function showError(message: string) {
   error.hidden = false;
   document.querySelector<HTMLElement>('#error-message')!.textContent = message;
   status.textContent = '预览不可用';
-  document.querySelectorAll<HTMLButtonElement>('.viewer-toolbar button').forEach((button) => {
-    button.disabled = true;
-  });
+  document
+    .querySelectorAll<HTMLButtonElement>(
+      '.viewer-toolbar button, [data-shot], .inspection-panel button, .inspection-panel input',
+    )
+    .forEach((button) => {
+      button.disabled = true;
+    });
 }
 
 retry.addEventListener('click', () => window.location.reload());
@@ -41,7 +45,7 @@ try {
   };
   // 仅开发模式提供只读诊断入口，不暴露可修改场景的全局句柄。
   if (import.meta.env.DEV) {
-    Object.defineProperty(window, '__stage02', {
+    Object.defineProperty(window, '__stage03', {
       value: { inspect: scene.inspect },
       configurable: true,
     });
@@ -62,5 +66,5 @@ window.addEventListener('pagehide', (event) => {
 if (import.meta.hot)
   import.meta.hot.dispose(() => {
     cleanup();
-    Reflect.deleteProperty(window, '__stage02');
+    Reflect.deleteProperty(window, '__stage03');
   });

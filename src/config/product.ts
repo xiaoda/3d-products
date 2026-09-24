@@ -9,5 +9,5 @@ export const PRODUCT = {
   earbud: { width: 18.3, height: 30.2, depth: 18.1 },
   // 图片推定的展示几何参数，不是官方机械图尺寸。
   assembly: { seatX: 11.7, seatY: 28.6, hingeZ: -10.9, openAngle: 110 },
-  stage: 2,
+  stage: 3,
 } as const;

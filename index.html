@@ -6,13 +6,13 @@
     <meta name="theme-color" content="#f5f5f1" />
     <meta
       name="description"
-      content="AirPods 5 程序化建模研究。第二阶段：连续曲面、内胆与装配检查。"
+      content="AirPods 5 程序化建模研究。第三阶段：物理材质、摄影棚灯光与展示构图。"
     />
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%232c5246'/%3E%3Cpath d='M12 12h16v16H12z' fill='none' stroke='%23e7ebdf' stroke-width='2'/%3E%3C/svg%3E"
     />
-    <title>AirPods 5 · 精修灰模研究</title>
+    <title>AirPods 5 · 材质与光影研究</title>
   </head>
   <body>
     <header class="site-header">
@@ -20,38 +20,39 @@
         ><span class="brand-symbol" aria-hidden="true">◧</span> 产品研究室
         <span class="brand-divider">/</span> <span class="brand-project">三维产品实验</span></a
       >
-      <span class="stage-badge"><i aria-hidden="true"></i>阶段 02 · 几何精修</span>
+      <span class="stage-badge"><i aria-hidden="true"></i>阶段 03 · 材质与光影</span>
     </header>
 
     <main>
       <section class="page-heading" aria-labelledby="page-title">
         <div>
-          <p class="eyebrow">形体、比例与空间</p>
-          <h1 id="page-title">AirPods 5<span>形体研究。</span></h1>
+          <p class="eyebrow">材质、反射与光影</p>
+          <h1 id="page-title">AirPods 5<span>光影研究。</span></h1>
         </div>
-        <p class="heading-note">先看轮廓，再谈质感。<br />由截面生长的连续曲面。</p>
+        <p class="heading-note">让光线，描摹曲面。<br />纯程序化模型 · 摄影棚材质研究。</p>
       </section>
 
       <div class="workspace">
-        <section class="viewer-shell" aria-label="三维精修灰模展示台">
+        <section class="viewer-shell" aria-label="三维摄影棚展示台">
           <div class="viewer-topline">
             <span
               ><i class="live-dot" aria-hidden="true"></i
               ><span id="render-status">正在初始化</span></span
-            ><span class="mono">02 / 06</span>
+            ><span class="mono">03 / 06</span>
           </div>
           <div id="viewport" class="viewport">
-            <div id="loading" class="loading" role="status">正在生成连续曲面与收纳结构…</div>
+            <div id="loading" class="loading" role="status">正在生成模型与摄影棚反射…</div>
             <div id="viewer-error" class="viewer-error" role="alert" hidden>
               <strong>暂时无法启动三维预览</strong>
               <p id="error-message">请使用支持 WebGL 2 的浏览器。</p>
               <button id="retry-button" type="button">重新加载</button>
             </div>
             <div class="viewer-bottomline">
-              <span id="view-caption">透视 · 固定分开展示</span><span>灰模 / 无纹理</span>
+              <span id="view-caption">透视 · 开盖展示</span
+              ><span id="material-caption">物理材质 / 柔光棚</span>
             </div>
           </div>
-          <div class="viewer-toolbar" aria-label="白模观察工具">
+          <div class="viewer-toolbar" aria-label="产品观察工具">
             <div class="view-buttons" role="group" aria-label="观察视角">
               <button type="button" data-view="perspective" aria-pressed="true" disabled>
                 透视
@@ -83,13 +84,42 @@
             <span aria-hidden="true">↔</span> 拖动旋转 <span class="hint-dot">·</span> 滚轮 /
             双指缩放 <span class="hint-dot">·</span> 按钮可键盘操作
           </p>
+          <div class="shot-bar" role="group" aria-label="摄影构图">
+            <span class="shot-label">摄影构图 <span>即时切换</span></span>
+            <button type="button" data-shot="closed" aria-pressed="false" disabled>
+              <span>01</span> 闭合主视觉
+            </button>
+            <button type="button" data-shot="open" aria-pressed="true" disabled>
+              <span>02</span> 开盖双耳
+            </button>
+            <button type="button" data-shot="detail" aria-pressed="false" disabled>
+              <span>03</span> 单耳特写
+            </button>
+          </div>
         </section>
 
         <aside class="study-panel" aria-label="阶段说明与模型参数">
           <div class="panel-section stage-summary">
             <span class="section-index">当前阶段</span>
-            <h2>几何精修<span class="outlined-number" aria-hidden="true">02</span></h2>
-            <p>连续曲面与真实深度凹槽。<br />本轮检查外形、细节与装配。</p>
+            <h2>材质与光影<span class="outlined-number" aria-hidden="true">03</span></h2>
+            <p>白色塑料，细密网罩，银色触点。<br />在柔光下，观察不同表面的反射。</p>
+          </div>
+          <div class="panel-section material-legend">
+            <h3>表面研究 <span class="muted mono">PBR</span></h3>
+            <ul>
+              <li>
+                <i class="material-swatch plastic-swatch" aria-hidden="true"></i
+                ><span>亮面白塑料<small>外壳 · 柔和清漆高光</small></span>
+              </li>
+              <li>
+                <i class="material-swatch metal-swatch" aria-hidden="true"></i
+                ><span>银色金属<small>铰链与触点 · 环境反射</small></span>
+              </li>
+              <li>
+                <i class="material-swatch grille-swatch" aria-hidden="true"></i
+                ><span>深色网罩<small>真实几何细网 · 哑光衬底</small></span>
+              </li>
+            </ul>
           </div>
           <div class="panel-section">
             <h3>模型组成 <span class="muted mono">04</span></h3>
@@ -129,9 +159,9 @@
           <div class="scope-note">
             <span class="scope-marker" aria-hidden="true">↳</span>
             <div>
-              <strong>这不是最终模型</strong>
+              <strong>本轮只评审材质与构图</strong>
               <p>
-                当前为中性灰模，不代表最终材质。细部尺寸为图片近似，先验收形体，再进入材质阶段。
+                细部几何仍为图片近似。摄影构图立即切换，不含正式开合动画；材质参数是展示调校，不是实物测量值。
               </p>
             </div>
           </div>
@@ -139,10 +169,10 @@
       </div>
       <footer class="page-footer">
         <span>Three.js 程序化建模 <span class="footer-slash">/</span> 未使用外部产品模型</span
-        ><span>第二阶段 · 等待几何验收</span>
+        ><span>第三阶段 · 等待材质与构图验收</span>
       </footer>
     </main>
-    <noscript>此展示需要启用 JavaScript。当前为精修灰模阶段，包含充电盒与左右耳机。</noscript>
+    <noscript>此展示需要启用 JavaScript。当前为材质与灯光阶段，包含充电盒与左右耳机。</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

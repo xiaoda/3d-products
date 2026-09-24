@@ -196,7 +196,7 @@ main {
 .viewport {
   height: clamp(440px, 54vh, 620px);
   position: relative;
-  background: radial-gradient(ellipse at 50% 43%, #fafbf5 0, #eef0e9 55%, #e5e8df 100%);
+  background: radial-gradient(ellipse at 48% 38%, #f8f7f3 0, #eeece6 57%, #e2dfd7 100%);
 }
 .viewport:before,
 .viewport:after {
@@ -838,5 +838,141 @@ noscript {
   }
   .viewer-toolbar {
     gap: 6px;
+  }
+}
+
+/* 第三阶段摄影棚构图入口，保留研究工作台而不是重做营销页面。 */
+.shot-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 20px;
+  background: #f1f0e9;
+  border-top: 1px solid #ddded5;
+}
+.shot-label {
+  font-size: 11px;
+  color: #52634e;
+  margin-right: auto;
+}
+.shot-label > span {
+  display: block;
+  font-size: 9px;
+  margin-top: 4px;
+  color: #838b7d;
+}
+.shot-bar button {
+  border: 1px solid #d4d8cc;
+  background: transparent;
+  color: #626d5e;
+  padding: 11px 14px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+.shot-bar button > span {
+  font-family: Consolas, monospace;
+  font-size: 10px;
+  margin-right: 8px;
+  opacity: 0.65;
+}
+.shot-bar button[aria-pressed='true'] {
+  background: #345a47;
+  color: #fff;
+  border-color: #345a47;
+}
+.material-legend ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 15px;
+}
+.material-legend li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+}
+.material-legend small {
+  display: block;
+  font-size: 10px;
+  color: #8a907f;
+  margin-top: 5px;
+}
+.material-swatch {
+  width: 31px;
+  height: 31px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid #d5d8d0;
+}
+.plastic-swatch {
+  background: radial-gradient(circle at 32% 24%, white 7%, #f3f4ef 30%, #c4c8c1 89%);
+}
+.metal-swatch {
+  background: linear-gradient(
+    115deg,
+    #555e5b 3%,
+    #f7fbf6 30%,
+    #88938e 42%,
+    #e5eae4 66%,
+    #6c7771 100%
+  );
+}
+.grille-swatch {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 2px, #627068 2px 3px),
+    repeating-linear-gradient(90deg, #25372e 0 2px, #627068 2px 3px);
+}
+@media (max-width: 1100px) {
+  .shot-bar {
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+  .shot-label {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 3px;
+  }
+  .shot-label > span {
+    display: inline;
+    margin-left: 8px;
+  }
+  .shot-bar button {
+    padding: 10px;
+  }
+}
+@media (max-width: 760px) {
+  .shot-bar {
+    gap: 5px;
+  }
+  .shot-bar button {
+    padding: 11px 8px;
+    font-size: 10px;
+  }
+  .shot-bar button > span {
+    margin-right: 3px;
+  }
+  .material-legend {
+    grid-column: 1/-1;
+    grid-row: 2;
+  }
+  .material-legend ul {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .material-legend li {
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 11px;
+    gap: 9px;
+  }
+  .material-legend small {
+    font-size: 9px;
+    line-height: 1.6;
+  }
+  .inspection-panel {
+    grid-row: 3;
   }
 }

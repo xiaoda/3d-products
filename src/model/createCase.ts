@@ -1,17 +1,18 @@
-import { Group, Mesh, MeshStandardMaterial } from 'three';
+import { Group, Mesh } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { PRODUCT, mm } from '../config/product';
 import { createLoftGeometry, horizontalPlate, sectionContour, section } from './geometry';
 import { bodyProfile, lidProfile, caseExponent, wellProfile, lidWellProfile } from './profiles';
 import { createCaseDetails } from './details';
+import { createProductMaterials, type ProductMaterials } from './materials';
 
-export function createCase() {
+export function createCase(materials: ProductMaterials = createProductMaterials()) {
   const group = new Group();
   group.name = 'CaseAssembly';
   const body = new Group();
   body.name = 'CaseBody';
-  const clay = new MeshStandardMaterial({ color: 0xd6dbd7, roughness: 0.74, metalness: 0 });
-  const interiorClay = new MeshStandardMaterial({ color: 0xbec8c0, roughness: 0.82, metalness: 0 });
+  const clay = materials.get('plastic');
+  const interiorClay = materials.get('interior');
   const outer = new Mesh(
     createLoftGeometry(bodyProfile, { exponent: caseExponent, capStart: false, capEnd: false }),
     clay,
@@ -36,7 +37,7 @@ export function createCase() {
   body.add(bottom);
   const port = new Group();
   port.name = 'USBPort';
-  const portMaterial = new MeshStandardMaterial({ color: 0x515d56, roughness: 0.85, metalness: 0 });
+  const portMaterial = materials.get('port');
   port.add(
     new Mesh(
       createLoftGeometry(portProfile, { exponent: 4, capStart: false, capEnd: true, inward: true }),
@@ -104,7 +105,7 @@ export function createCase() {
   lid.add(lidInterior);
   lid.position.copy(lidPivot.position).multiplyScalar(-1);
   lidPivot.add(lid);
-  body.add(createCaseDetails());
+  body.add(createCaseDetails(materials));
   group.add(body, lidPivot);
   return { group, body, lid, lidPivot, interior, lidInterior };
 }

@@ -1,23 +1,24 @@
-import { Box3, Group, Mesh, MeshStandardMaterial, Vector3 } from 'three';
+import { Box3, Group, Mesh, Vector3 } from 'three';
 import { PRODUCT, mm } from '../config/product';
 import { createLoftGeometry, profileSurface } from './geometry';
 import { earbudProfile } from './profiles';
 import { createEarDetails, recessedSurface } from './details';
+import { createProductMaterials, type ProductMaterials } from './materials';
 
 export type EarSide = 'left' | 'right';
-export function createEarbud(side: EarSide): Group {
+export function createEarbud(
+  side: EarSide,
+  materials: ProductMaterials = createProductMaterials(),
+): Group {
   const prefix = side === 'left' ? 'Left' : 'Right',
     group = new Group();
   group.name = `${prefix}Earbud`;
   const surface = recessedSurface(profileSurface(earbudProfile, 2));
   const geometry = createLoftGeometry(earbudProfile, { segments: 144, subdivisions: 10, surface });
-  const shell = new Mesh(
-    geometry,
-    new MeshStandardMaterial({ color: 0xd6dbd7, roughness: 0.74, metalness: 0 }),
-  );
+  const shell = new Mesh(geometry, materials.get('plastic'));
   shell.name = `${prefix}EarbudShell`;
   shell.userData.surface = 'continuous-section-loft';
-  group.add(shell, createEarDetails(surface, prefix));
+  group.add(shell, createEarDetails(surface, prefix, materials));
   group.updateMatrixWorld(true);
   const bounds = new Box3().setFromObject(group, true),
     center = bounds.getCenter(new Vector3()),

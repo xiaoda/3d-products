@@ -1,0 +1,173 @@
+{
+  "version": "0.3.0",
+  "capturedAt": "2026-09-24T16:45:14.8404323+08:00",
+  "baseCommit": "8aa34cd2d65fd252f0927c79c47b3288d9ccc25d",
+  "status": "第三阶段未提交工作区快照",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 59,
+      "sha256": "cc9abab41b76a31fb0568044011445a452b2c49919e1697f8e6eb080653a4b50"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 56,
+      "sha256": "bb6980def597cb0631a0b06638424ff5b1e23e3e3a977ea1eec2b4bc0487d7f6"
+    },
+    {
+      "path": ".prettierrc.json",
+      "bytes": 73,
+      "sha256": "d7fa1c1dee12b930b45e1f8c465b07da95fa519cfd9e3e503c76dc762617b1fb"
+    },
+    {
+      "path": "index.html",
+      "bytes": 8726,
+      "sha256": "080680f247f01dc4c89c72167b22987040c9c6081d88b17d6ef4a2d9c167cb18"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 40560,
+      "sha256": "087963eb1848eb10bdac7e23945942a58b1f6c80d9c591b8abb5c5a7343f5876"
+    },
+    {
+      "path": "package.json",
+      "bytes": 585,
+      "sha256": "4911ef66a8efd845c7675cb33083c2f3a06d72cf950d88d793e5eb92d3195029"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7798,
+      "sha256": "a6bd284a0edcf4dd40b5c859ebfca887b3efde175786d22a03683394574c67cd"
+    },
+    {
+      "path": "src/config/product.ts",
+      "bytes": 561,
+      "sha256": "0a7ca7cc17e817aa9fb0704c32e537ef36b6535510ffd8e6d6c8d6dc4ba2e9c0"
+    },
+    {
+      "path": "src/debug/modelInspection.ts",
+      "bytes": 3050,
+      "sha256": "c3c394ef2a5276fdd569c3f4516a0aaade0d57c8c1ca92c6c945e41a0e9f117f"
+    },
+    {
+      "path": "src/main.ts",
+      "bytes": 2453,
+      "sha256": "3c578bb11ae758d48ae093dd83d50ecbe99484e83b22891bda766d8946548669"
+    },
+    {
+      "path": "src/model/createCase.ts",
+      "bytes": 3655,
+      "sha256": "ed462df96a33d78bfd8b0716c2078ef6de24b18ae98160ea54c601bd44e338d4"
+    },
+    {
+      "path": "src/model/createEarbud.ts",
+      "bytes": 2203,
+      "sha256": "d6a73ddb14eae87054dffb319f5e80595d658377122011e2b2a60510fae47784"
+    },
+    {
+      "path": "src/model/createProduct.ts",
+      "bytes": 2826,
+      "sha256": "062c61dafc684a050007f64109961dd6101133ba59445a3ee411ae84b51d410f"
+    },
+    {
+      "path": "src/model/details.ts",
+      "bytes": 6495,
+      "sha256": "8044cbb6599e98c0a0b06772a4dc6953e9f3f52c0b75b8c3a87e18c009f2a45b"
+    },
+    {
+      "path": "src/model/geometry.ts",
+      "bytes": 7159,
+      "sha256": "8fdcb44372396c96bfe2a5580057835ba14bd4323bc7fe1773272a20e024f3f1"
+    },
+    {
+      "path": "src/model/materials.ts",
+      "bytes": 2942,
+      "sha256": "e823b0e2a220bd36182cf7285454e5eeda9efb893fc2612fef9c24143a6c6178"
+    },
+    {
+      "path": "src/model/profiles.ts",
+      "bytes": 3005,
+      "sha256": "376b9df806a95b79e1c9f0b5397ab16b8196a6a08576a5d683adf6d25d24b9f2"
+    },
+    {
+      "path": "src/scene/cameraPresets.ts",
+      "bytes": 1176,
+      "sha256": "758cbf7f9a9bd3c631ea81bee0d7c43a52fbbeef6810d7bf10c23530ce177165"
+    },
+    {
+      "path": "src/scene/contactShadow.ts",
+      "bytes": 4625,
+      "sha256": "946bdc0c9fc6f3327bf35ab256109169c7446eaa0906c45581429f723421d5e0"
+    },
+    {
+      "path": "src/scene/createScene.ts",
+      "bytes": 10176,
+      "sha256": "92add54d1fd0d6d6fcbac8fb75f64b59d4f3ec64220e27793f54e30c94e45eac"
+    },
+    {
+      "path": "src/scene/framing.ts",
+      "bytes": 611,
+      "sha256": "e9525770328e3c938af6a4dd5982ac8d03e2feb5c8162e6cf5a626850a5b3ba6"
+    },
+    {
+      "path": "src/scene/lighting.ts",
+      "bytes": 4274,
+      "sha256": "da77277a4f5403a7fb3aaab7c7efdc56e01d002a56b540723c989a937cc73299"
+    },
+    {
+      "path": "src/tests/contactShadow.test.ts",
+      "bytes": 3181,
+      "sha256": "2804197b32038a0b41d84d944c218b9dba09e9a450c01d6e0e50e8122ce0eda4"
+    },
+    {
+      "path": "src/tests/framing.test.ts",
+      "bytes": 620,
+      "sha256": "b2ab99884eea5b993c3dbb29ab0d8df0886f8491bf53e47fc9bd605a15904ee3"
+    },
+    {
+      "path": "src/tests/geometry.test.ts",
+      "bytes": 2172,
+      "sha256": "862cb38de2bfefdaeb2ba0d70f5ff0a899d9b37f8e6e16ba59c2957d216a6612"
+    },
+    {
+      "path": "src/tests/inspection.test.ts",
+      "bytes": 6250,
+      "sha256": "822461a27d301fdb8282b150c02bc3eb5c5955a86ccd47adeb8edeadd479811a"
+    },
+    {
+      "path": "src/tests/materials.test.ts",
+      "bytes": 2216,
+      "sha256": "3a00dea487a10c1ebd69c6a6940dc93f0b7eed713fb5189099a5a1c134e10d8d"
+    },
+    {
+      "path": "src/tests/product.test.ts",
+      "bytes": 3893,
+      "sha256": "486d10f0f2bf32ad4a097761bf9d254498285c38aaa655ae3297f90a6f95e6e1"
+    },
+    {
+      "path": "src/tests/studio.test.ts",
+      "bytes": 1423,
+      "sha256": "1fb47868be93c33d8745425690afb4a0a39e560c03969a15d020ac0e34785cf1"
+    },
+    {
+      "path": "src/ui/controls.ts",
+      "bytes": 2771,
+      "sha256": "4884bedb06ec050b93f724b65e60d6cb53366c38769a44073267729418cc26ac"
+    },
+    {
+      "path": "src/ui/styles.css",
+      "bytes": 16460,
+      "sha256": "b882a736150c5a8bdd306f72360cff9eb080233963952b09aae4474d00a5c43f"
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 426,
+      "sha256": "3b87addef2b949754aae9e4d878121dc139b95e8c1f7df32338b20f5dbe52bcf"
+    },
+    {
+      "path": "vite.config.ts",
+      "bytes": 353,
+      "sha256": "d58867e44f61767026b539a0634793eab6ebe1e16feb0881c94d687a5b0a54da"
+    }
+  ]
+}

@@ -1,13 +1,7 @@
-import {
-  BufferGeometry,
-  Float32BufferAttribute,
-  Group,
-  Mesh,
-  MeshStandardMaterial,
-  SphereGeometry,
-} from 'three';
+import { BufferGeometry, Float32BufferAttribute, Group, Mesh, SphereGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { surfaceNormal, type Surface } from './geometry';
+import type { ProductMaterials } from './materials';
 
 export interface Recess {
   name: string;
@@ -130,16 +124,22 @@ function grilleGeometry(surface: Surface, recess: Recess): BufferGeometry {
   return geometry;
 }
 
-export function createEarDetails(surface: Surface, prefix: string): Group {
+export function createEarDetails(
+  surface: Surface,
+  prefix: string,
+  materials: ProductMaterials,
+): Group {
   const group = new Group();
   group.name = `${prefix}EarDetails`;
-  const inset = new MeshStandardMaterial({ color: 0x454c49, roughness: 0.83, metalness: 0 });
-  const rim = new MeshStandardMaterial({ color: 0xc5cdc7, roughness: 0.78, metalness: 0 });
-  const lattice = new MeshStandardMaterial({ color: 0x78817c, roughness: 0.9, metalness: 0 });
+  const rim = materials.get('plastic');
+  const lattice = materials.get('grilleWire');
   for (const recess of earRecesses) {
     const border = new Mesh(patchGeometry(surface, recess, 0.83, 0.96, 0.003), rim);
     border.name = `${prefix}${recess.name}Rim`;
-    const face = new Mesh(patchGeometry(surface, recess, 0, 0.83, 0.005), inset);
+    const face = new Mesh(
+      patchGeometry(surface, recess, 0, 0.83, 0.005),
+      materials.get(recess.grille ? 'grille' : 'sensor'),
+    );
     face.name = `${prefix}${recess.name}${recess.grille ? 'Grille' : ''}`;
     group.add(border, face);
     if (recess.grille) {
@@ -148,7 +148,7 @@ export function createEarDetails(surface: Surface, prefix: string): Group {
       group.add(grid);
     }
   }
-  const tip = new Mesh(new SphereGeometry(1, 32, 16), rim);
+  const tip = new Mesh(new SphereGeometry(1, 32, 16), materials.get('contact'));
   tip.name = `${prefix}ChargingContact`;
   tip.scale.set(0.241, 0.073, 0.217);
   tip.position.set(0.28, -1.429, -0.27);
@@ -156,20 +156,23 @@ export function createEarDetails(surface: Surface, prefix: string): Group {
   return group;
 }
 
-export function createCaseDetails(): Group {
+export function createCaseDetails(materials: ProductMaterials): Group {
   const group = new Group();
   group.name = 'CaseDetails';
-  const material = new MeshStandardMaterial({ color: 0x909994, roughness: 0.8, metalness: 0 });
+  const material = materials.get('metal');
   const hinge = new Mesh(new RoundedBoxGeometry(1.5, 0.2, 0.075, 3, 0.035), material);
   hinge.name = 'Hinge';
   hinge.position.set(0, 3.28, -1.03);
   group.add(hinge);
   for (const x of [-0.54, 0.54]) {
-    const joint = new Mesh(new RoundedBoxGeometry(0.016, 0.19, 0.004, 1, 0.002), material);
+    const joint = new Mesh(
+      new RoundedBoxGeometry(0.016, 0.19, 0.004, 1, 0.002),
+      materials.get('port'),
+    );
     joint.position.set(x, 3.28, -1.069);
     group.add(joint);
   }
-  const led = new Mesh(new SphereGeometry(0.036, 24, 12), material);
+  const led = new Mesh(new SphereGeometry(0.036, 24, 12), materials.get('led'));
   led.name = 'StatusLight';
   // 仅 0.02 mm 表面偏移，避免被外壳覆盖；不是发光材质。
   led.scale.z = 0.11;
