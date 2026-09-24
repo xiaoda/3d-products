@@ -38,14 +38,18 @@ describe('产品几何回归', () => {
     disposeProduct(group);
   });
 
-  it.each(['left', 'right'] as const)('%s 耳机的独立局部尺寸正确', (side) => {
-    const group = createEarbud(side);
-    const size = new Box3().setFromObject(group).getSize(new Vector3());
-    expect(size.x).toBeCloseTo(mm(PRODUCT.earbud.width), 3);
-    expect(size.y).toBeCloseTo(mm(PRODUCT.earbud.height), 3);
-    expect(size.z).toBeCloseTo(mm(PRODUCT.earbud.depth), 3);
-    disposeProduct(group);
-  });
+  it.each(['left', 'right'] as const)(
+    '%s 耳机局部尺寸保持已确认 C 基线，不再强制拉伸到规格框',
+    (side) => {
+      const group = createEarbud(side);
+      const size = new Box3().setFromObject(group).getSize(new Vector3());
+      // docs/acceptance/earbud-details-review/geometry-metrics.json 中冻结的实际尺寸。
+      for (const [i, baseline] of [18.2379513979, 30.1975631714, 18.3856725693].entries())
+        expect(size.toArray()[i]).toBeCloseTo(mm(baseline), 6);
+      expect(group.userData.normalizedByBounds).toBe(false);
+      disposeProduct(group);
+    },
+  );
 
   it('几何坐标与法线有限且法线有效', () => {
     const { root } = createProduct();
@@ -59,14 +63,16 @@ describe('产品几何回归', () => {
       expect(position.count).toBeGreaterThan(0);
       expect(Array.from(position.array).every(Number.isFinite)).toBe(true);
       expect(Array.from(normal.array).every(Number.isFinite)).toBe(true);
-      for (let i = 0; i < normal.count; i++) {
-        expect(
-          new Vector3().fromBufferAttribute(normal, i).length(),
-          `${object.name}:normal:${i}`,
-        ).toBeCloseTo(1, 3);
-      }
+      // 仍检查每一个法线，只汇总最坏值，避免为几十万顶点创建 matcher 对象。
+      let maximumNormalError = 0;
+      for (let i = 0; i < normal.count; i++)
+        maximumNormalError = Math.max(
+          maximumNormalError,
+          Math.abs(Math.hypot(normal.getX(i), normal.getY(i), normal.getZ(i)) - 1),
+        );
+      expect(maximumNormalError, `${object.name} 法线最大误差`).toBeLessThan(0.0005);
       if (geometry.index) {
-        for (const index of geometry.index.array) expect(index).toBeLessThan(position.count);
+        expect(geometry.index.array.every((index: number) => index < position.count)).toBe(true);
       }
     });
     expect(meshCount).toBeGreaterThanOrEqual(6);

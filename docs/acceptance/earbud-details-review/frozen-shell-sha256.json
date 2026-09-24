@@ -1,0 +1,16 @@
+{
+  "userConfirmation": "确认",
+  "unchangedDuringStageC": true,
+  "acceptedStage": "B",
+  "date": "2026-09-25",
+  "files": [
+    {
+      "sha256": "c0922faef5414c93fad73d3a2d83860bc73616a8bb7c30ecab70be05a830dc6d",
+      "file": "src/model/earbudDefinition.ts"
+    },
+    {
+      "sha256": "59767e6e4c7defb73d1994853d779fc31cb426ce2f5156ed04afa8ebf3279f6a",
+      "file": "src/model/createEarbudShell.ts"
+    }
+  ]
+}

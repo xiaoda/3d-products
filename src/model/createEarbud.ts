@@ -1,55 +1,61 @@
-import { Box3, Group, Mesh, Vector3 } from 'three';
-import { PRODUCT, mm } from '../config/product';
-import { createEarbudGeometry, earbudSurface } from './earbudSurface';
-import { createEarDetails, recessedSurface, earRecesses } from './details';
-import { createProductMaterials, type ProductMaterials } from './materials';
+import { BufferGeometry, Group, Mesh } from 'three';
+import { createDetailedEarbud } from './createDetailedEarbud';
+import { createProductMaterials, type MaterialRole, type ProductMaterials } from './materials';
 
 export type EarSide = 'left' | 'right';
+interface EarTemplate {
+  name: string;
+  geometry: BufferGeometry;
+  roles: MaterialRole[];
+}
+let templates: EarTemplate[] | undefined;
+
+/** 固定 C 参数只计算一次。模板仅在 CPU，永不加入场景；每个实例克隆独立几何。 */
+function acceptedTemplates(): EarTemplate[] {
+  if (templates) return templates;
+  const model = createDetailedEarbud('right');
+  try {
+    templates = model.root.children.map((object) => {
+      const mesh = object as Mesh;
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      return {
+        name: mesh === model.shell ? 'EarbudShell' : mesh.name,
+        geometry: mesh.geometry.clone(),
+        roles: materials.map((material) => material.name as MaterialRole),
+      };
+    });
+    return templates;
+  } finally {
+    // 包括评审控制器保留的裸壳。生产实例不携带细节开关或该控制器的生命周期。
+    model.dispose();
+  }
+}
+
+/** 正式装配直接采用已确认 C 几何；不按产品包围盒二次平移/缩放。 */
 export function createEarbud(
   side: EarSide,
   materials: ProductMaterials = createProductMaterials(),
 ): Group {
-  const prefix = side === 'left' ? 'Left' : 'Right',
-    group = new Group();
-  group.name = `${prefix}Earbud`;
-  const surface = recessedSurface(earbudSurface);
-  // 小开口附近加密纵向采样，避免孔缘落在稀疏环之间形成波浪形切边。
-  const detailSamples = earRecesses.flatMap((r) =>
-    Array.from({ length: 25 }, (_, i) => r.u + (r.radiusU * (i - 12)) / 10),
-  );
-  const geometry = createEarbudGeometry(surface, { detailSamples });
-  const shell = new Mesh(geometry, materials.get('plastic'));
-  shell.name = `${prefix}EarbudShell`;
-  shell.userData.surface = 'bent-asymmetric-loft';
-  group.add(shell, createEarDetails(surface, prefix, materials));
-  group.updateMatrixWorld(true);
-  const bounds = new Box3().setFromObject(group, true),
-    center = bounds.getCenter(new Vector3()),
-    size = bounds.getSize(new Vector3());
-  const scale = new Vector3(
-    mm(PRODUCT.earbud.width) / size.x,
-    mm(PRODUCT.earbud.height) / size.y,
-    mm(PRODUCT.earbud.depth) / size.z,
-  );
-  group.userData.normalization = { center: center.toArray(), scale: scale.toArray() };
-  group.traverse((object) => {
-    if (!(object instanceof Mesh)) return;
-    object.geometry.applyMatrix4(object.matrixWorld);
-    object.geometry.translate(-center.x, -center.y, -center.z);
-    object.geometry.scale(side === 'left' ? -scale.x : scale.x, scale.y, scale.z);
+  const root = new Group(),
+    prefix = side === 'left' ? 'Left' : 'Right';
+  root.name = `${prefix}Earbud`;
+  for (const template of acceptedTemplates()) {
+    const geometry = template.geometry.clone();
     if (side === 'left') {
-      const index = object.geometry.index!;
+      geometry.scale(-1, 1, 1);
+      const index = geometry.index!;
       for (let i = 0; i < index.count; i += 3) {
-        const value = index.getX(i + 1);
+        const b = index.getX(i + 1);
         index.setX(i + 1, index.getX(i + 2));
-        index.setX(i + 2, value);
+        index.setX(i + 2, b);
       }
     }
-    // 几何变换已通过法线矩阵变换法线；保留球体极点的解析法线。
-    object.position.set(0, 0, 0);
-    object.rotation.set(0, 0, 0);
-    object.scale.set(1, 1, 1);
-  });
-  group.updateMatrixWorld(true);
-  return group;
+    const roles = template.roles.map((role) => materials.get(role));
+    const mesh = new Mesh(geometry, roles.length === 1 ? roles[0] : roles);
+    mesh.name = prefix + template.name;
+    root.add(mesh);
+  }
+  root.userData.model = 'accepted-control-surface-with-details';
+  root.userData.normalizedByBounds = false;
+  return root;
 }

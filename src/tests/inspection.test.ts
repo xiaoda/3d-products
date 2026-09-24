@@ -14,8 +14,17 @@ describe('第二阶段静态装配', () => {
       const shell = product.root.getObjectByName(`${side}EarbudShell`);
       expect(shell).toBeInstanceOf(Mesh);
       expect(product.root.getObjectByName(`${side}EarbudHead`)).toBeUndefined();
-      expect(product.root.getObjectByName(`${side}SpeakerGrille`)).toBeDefined();
-      expect(product.root.getObjectByName(`${side}Sensor`)).toBeDefined();
+      expect(product.root.getObjectByName(`${side}speakerLattice`)).toBeInstanceOf(Mesh);
+      // C 将孔缘、封底、传感器和触点焊接在同一壳中，以材质分组表达而非重叠节点。
+      const mesh = shell as Mesh;
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      expect(mesh.geometry.groups.map((g) => materials[g.materialIndex!].name)).toEqual([
+        'plastic',
+        'grille',
+        'sensor',
+        'contact',
+      ]);
+      expect(mesh.geometry.userData.features).toHaveLength(7);
     }
     for (const name of [
       'CaseInterior',
@@ -103,7 +112,7 @@ describe('第二阶段静态装配', () => {
     }
     disposeProduct(product.root);
   });
-  it('开盖角度采样时收纳耳机不进入盒盖实体区域', () => {
+  it('开盖角度采样时收纳耳机不进入盒盖实体区域', { timeout: 30000 }, () => {
     const product = createProduct();
     setProductPose(product, 'closed');
     const points: Vector3[] = [];

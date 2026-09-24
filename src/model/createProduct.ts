@@ -63,7 +63,10 @@ export function setProductPose(
   product.root.updateMatrixWorld(true);
 }
 
+const disposedRoots = new WeakSet<Group>();
 export function disposeProduct(root: Group): void {
+  if (disposedRoots.has(root)) return;
+  disposedRoots.add(root);
   const geometries = new Set<Mesh['geometry']>();
   const materials = new Set<Material>();
   root.traverse((object) => {
@@ -74,4 +77,5 @@ export function disposeProduct(root: Group): void {
   });
   for (const geometry of geometries) geometry.dispose();
   for (const material of materials) material.dispose();
+  root.clear();
 }

@@ -1,0 +1,49 @@
+{
+  "timeMs": 1642.2542999999996,
+  "cavities": [
+    {
+      "name": "LeftWell",
+      "vertices": 10465,
+      "minimumHorizontalWallMm": 0.8454563728559017,
+      "worst": [
+        -1.6654406785964966,
+        2.646305561065674,
+        -0.9502195119857788
+      ],
+      "largestHorizontalWallMm": 10.59756145552965
+    },
+    {
+      "name": "RightWell",
+      "vertices": 10465,
+      "minimumHorizontalWallMm": 0.8454563728559017,
+      "worst": [
+        1.6654406785964966,
+        2.646305561065674,
+        -0.9502195119857788
+      ],
+      "largestHorizontalWallMm": 10.59756145552965
+    },
+    {
+      "name": "LeftLidWell",
+      "vertices": 3745,
+      "minimumHorizontalWallMm": 0.5718399343320169,
+      "worst": [
+        -1.232022762298584,
+        3.2432632446289062,
+        1.0026257038116455
+      ],
+      "largestHorizontalWallMm": 10.540499470062537
+    },
+    {
+      "name": "RightLidWell",
+      "vertices": 3745,
+      "minimumHorizontalWallMm": 0.5718399343320169,
+      "worst": [
+        1.232022762298584,
+        3.2432632446289062,
+        1.0026257038116455
+      ],
+      "largestHorizontalWallMm": 10.540499470062537
+    }
+  ]
+}

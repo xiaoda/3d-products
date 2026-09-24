@@ -23,16 +23,26 @@ describe('第三阶段材质', () => {
   it('产品中所有网格有具名材质，左右耳与充电盒共享塑料', () => {
     const product = createProduct();
     const mesh = (name: string) => product.root.getObjectByName(name) as Mesh;
-    expect(mesh('LeftEarbudShell').material).toBe(mesh('CaseOuterShell').material);
-    expect(mesh('RightEarbudShell').material).toBe(mesh('CaseOuterShell').material);
+    const shellMaterials = (name: string) => {
+      const material = mesh(name).material;
+      expect(Array.isArray(material)).toBe(true);
+      return Array.isArray(material) ? material : [material];
+    };
+    expect(shellMaterials('LeftEarbudShell')[0]).toBe(mesh('CaseOuterShell').material);
+    expect(shellMaterials('RightEarbudShell')[0]).toBe(mesh('CaseOuterShell').material);
     expect((mesh('Hinge').material as MeshPhysicalMaterial).name).toBe('metal');
-    expect((mesh('RightSensor').material as MeshPhysicalMaterial).name).toBe('sensor');
+    expect(shellMaterials('RightEarbudShell')[2].name).toBe('sensor');
     const materials = new Set();
     product.root.traverse((object) => {
       if (!(object instanceof Mesh)) return;
-      expect(Array.isArray(object.material)).toBe(false);
-      expect(object.material.name).not.toBe('');
-      materials.add(object.material);
+      const list = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of list) {
+        expect(material.name).not.toBe('');
+        materials.add(material);
+      }
+      if (Array.isArray(object.material))
+        for (const group of object.geometry.groups)
+          expect(group.materialIndex!).toBeLessThan(list.length);
     });
     expect(materials.size).toBeLessThanOrEqual(10);
     let releases = 0;

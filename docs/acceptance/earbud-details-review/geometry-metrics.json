@@ -1,0 +1,36 @@
+{
+  "shellVertices": 53496,
+  "shellTriangles": 106988,
+  "quality": {
+    "closed": true,
+    "euler": 2,
+    "minimumArea": 3.0566095354455277e-9,
+    "volume": 2.616604519953484,
+    "maxDihedral": 37.67439334136014,
+    "percentile999": 26.331872157639175
+  },
+  "nonAdjacentIntersections": [],
+  "sizeMm": [
+    18.237951397895813,
+    30.19756317138672,
+    18.385672569274902
+  ],
+  "roles": [
+    {
+      "material": "plastic",
+      "triangles": 81435
+    },
+    {
+      "material": "grille",
+      "triangles": 14093
+    },
+    {
+      "material": "sensor",
+      "triangles": 748
+    },
+    {
+      "material": "contact",
+      "triangles": 10712
+    }
+  ]
+}

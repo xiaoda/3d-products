@@ -9,6 +9,7 @@ import {
   OrthographicCamera,
   PerspectiveCamera,
   Scene,
+  ShaderMaterial,
   Sphere,
   SRGBColorSpace,
   Vector3,
@@ -25,6 +26,7 @@ import {
 import { fitDistance } from './framing';
 import { CAMERA_PRESETS, SHOTS, type ShotName, type ViewName } from './cameraPresets';
 import { createStudioLighting, STUDIO } from './lighting';
+import { GEOMETRY_VIEWS, type GeometryView } from './geometryViews';
 
 export type { ViewName } from './cameraPresets';
 const directionFor = (view: ViewName) => new Vector3(...CAMERA_PRESETS[view].direction);
@@ -68,21 +70,38 @@ export function createScene(
     color: 0x647d6d,
     wireframe: true,
   });
+  const stripes = new ShaderMaterial({
+    vertexShader: `varying vec3 vN;
+      void main() { vN=normalMatrix*normal; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader: `varying vec3 vN;
+      void main() { vec3 r=reflect(vec3(0.0,0.0,-1.0),normalize(vN));
+        float wave=sin((r.x+r.y*0.35)*16.0); float w=max(fwidth(wave),0.025);
+        gl_FragColor=vec4(mix(vec3(0.06,0.13,0.10),vec3(0.90,0.94,0.89),smoothstep(-w,w,wave)),1.0);
+        #include <colorspace_fragment>
+      }`,
+    toneMapped: false,
+  });
   const sphere = new Sphere(),
     perspective = new PerspectiveCamera(32, 1, 0.1, 150),
     orthographic = new OrthographicCamera(-2, 2, 2, -2, 0.1, 150);
   let camera: PerspectiveCamera | OrthographicCamera = perspective;
-  let geometryView: 'top' | 'front' | 'side' | null = null;
-  const controls = new OrbitControls<PerspectiveCamera | OrthographicCamera>(camera, canvas);
-  controls.enablePan = false;
-  controls.enableDamping = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  controls.dampingFactor = 0.09;
-  controls.rotateSpeed = 0.65;
-  controls.zoomSpeed = 0.75;
-  controls.minPolarAngle = 0.0001;
-  controls.maxPolarAngle = Math.PI - 0.0001;
+  let geometryView: GeometryView | null = null;
+  function createControls() {
+    const orbit = new OrbitControls<PerspectiveCamera | OrthographicCamera>(camera, canvas);
+    orbit.enablePan = false;
+    orbit.enableDamping = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    orbit.dampingFactor = 0.09;
+    orbit.rotateSpeed = 0.65;
+    orbit.zoomSpeed = 0.75;
+    orbit.minZoom = 0.6;
+    orbit.maxZoom = 2.2;
+    orbit.addEventListener('start', handleManual);
+    return orbit;
+  }
+  let controls = createControls();
   let frameDistance = 20,
     disposed = false,
+    failed = false,
     raf = 0,
     pose: ProductPose | 'custom' = 'open',
     view: ViewName | 'manual' = 'perspective';
@@ -92,7 +111,8 @@ export function createScene(
   let focus: 'product' | 'case' | 'earbud' = 'product';
   let hideEarbuds = false,
     wireframe = false,
-    uniformGray = false;
+    uniformGray = false,
+    stripeInspection = false;
 
   function notify() {
     studio.markDirty();
@@ -139,7 +159,9 @@ export function createScene(
   function snapView(next: ViewName) {
     geometryView = null;
     camera = perspective;
-    controls.object = camera;
+    controls.dispose();
+    camera.up.set(0, 1, 0);
+    controls = createControls();
     shot = null;
     view = next;
     frameScale = CAMERA_PRESETS[next].distanceScale;
@@ -202,18 +224,20 @@ export function createScene(
   observer.observe(host);
   resize();
   setShot('open');
-  const handleManual = () => {
+  function handleManual() {
     geometryView = null;
     view = 'manual';
     shot = null;
     onManualView();
     notify();
-  };
-  controls.addEventListener('start', handleManual);
+  }
   function tick() {
-    if (disposed || document.hidden) return;
+    if (disposed || failed || document.hidden) return;
     controls.update();
-    studio.updateFloor(camera.position, focus !== 'earbud' && !wireframe && !geometryView);
+    studio.updateFloor(
+      camera.position,
+      focus !== 'earbud' && !wireframe && !stripeInspection && !geometryView,
+    );
     studio.renderContactShadow();
     renderer.render(scene, camera);
     raf = requestAnimationFrame(tick);
@@ -224,6 +248,8 @@ export function createScene(
   };
   const handleLost = (event: Event) => {
     event.preventDefault();
+    failed = true;
+    controls.enabled = false;
     cancelAnimationFrame(raf);
     onContextLost();
   };
@@ -233,21 +259,22 @@ export function createScene(
   return {
     setView: snapView,
     setShot,
-    setGeometryView(next: 'top' | 'front' | 'side', subject: 'earbud' | 'case' = 'earbud') {
+    setGeometryView(next: GeometryView, subject: 'earbud' | 'case' = 'earbud') {
       pose = subject === 'earbud' ? 'open' : 'closed';
       setProductPose(product, pose);
       shot = null;
       geometryView = next;
-      view = next;
+      view = next in CAMERA_PRESETS ? (next as ViewName) : 'earbud';
       focus = subject;
       hideEarbuds = subject === 'case';
       camera = orthographic;
-      controls.object = camera;
-      controls.minZoom = 0.6;
-      controls.maxZoom = 2.2;
+      controls.dispose();
+      const preset = GEOMETRY_VIEWS[next];
+      camera.up.set(preset.up[0], preset.up[1], preset.up[2]);
+      controls = createControls();
       frameScale = 1;
       showParts();
-      frame(directionFor(next));
+      frame(new Vector3(...preset.direction));
       notify();
     },
     setPose,
@@ -264,7 +291,9 @@ export function createScene(
       if (focus === 'earbud') {
         geometryView = null;
         camera = perspective;
-        controls.object = camera;
+        controls.dispose();
+        camera.up.set(0, 1, 0);
+        controls = createControls();
         focus = 'product';
         view = 'perspective';
       }
@@ -274,16 +303,28 @@ export function createScene(
       frame(directionFor(view === 'manual' ? 'perspective' : view));
       notify();
     },
-    setInspectionMaterial(options: { wireframe?: boolean; uniformGray?: boolean }) {
+    setInspectionMaterial(options: {
+      wireframe?: boolean;
+      uniformGray?: boolean;
+      stripes?: boolean;
+    }) {
       wireframe = options.wireframe ?? wireframe;
       uniformGray = options.uniformGray ?? uniformGray;
+      stripeInspection = options.stripes ?? stripeInspection;
       for (const [mesh, material] of originalMaterials)
-        mesh.material = wireframe ? wire : uniformGray ? clay : material;
+        mesh.material = wireframe
+          ? wire
+          : stripeInspection
+            ? stripes
+            : uniformGray
+              ? clay
+              : material;
       notify();
     },
     reset() {
       wireframe = false;
       uniformGray = false;
+      stripeInspection = false;
       for (const [mesh, material] of originalMaterials) mesh.material = material;
       setShot('open');
     },
@@ -313,6 +354,8 @@ export function createScene(
         hideEarbuds,
         wireframe,
         uniformGray,
+        stripes: stripeInspection,
+        earbudModel: parts.rightEarbud.userData.model,
         studio: {
           ...studio.inspect(),
           exposure: renderer.toneMappingExposure,
@@ -323,6 +366,9 @@ export function createScene(
         materials: [...new Set([...originalMaterials.values()].flat().map((m) => m.name))],
         resources: { ...renderer.info.memory },
         position: camera.position.toArray(),
+        up: camera.up.toArray(),
+        zoom: camera.zoom,
+        earbudRotation: parts.rightEarbud.rotation.toArray(),
         target: controls.target.toArray(),
         distance: camera.position.distanceTo(controls.target),
         minDistance: controls.minDistance,
@@ -331,6 +377,7 @@ export function createScene(
         canvas: [canvas.width, canvas.height],
         meshes: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
+        failed,
         nodes: Object.values(parts).map((p) => p.name),
       };
     },
@@ -349,6 +396,7 @@ export function createScene(
       studio.dispose();
       clay.dispose();
       wire.dispose();
+      stripes.dispose();
       renderer.dispose();
       canvas.remove();
     },

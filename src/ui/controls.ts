@@ -1,5 +1,6 @@
 import type { ProductScene, ViewName } from '../scene/createScene';
 import type { ShotName } from '../scene/cameraPresets';
+import { GEOMETRY_VIEWS } from '../scene/geometryViews';
 const labels: Record<ViewName, string> = {
   perspective: '透视',
   front: '正面',
@@ -20,7 +21,7 @@ export function connectControls(scene: ProductScene): () => void {
     options = { signal: abort.signal };
   const refresh = () => {
     const state = scene.inspect();
-    markView(state.view);
+    markView(state.geometryView ? 'manual' : state.view);
     document
       .querySelectorAll<HTMLButtonElement>('[data-shot]')
       .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.shot === state.shot)));
@@ -28,13 +29,15 @@ export function connectControls(scene: ProductScene): () => void {
     if (materialCaption)
       materialCaption.textContent = state.wireframe
         ? '线框检查'
-        : state.uniformGray
-          ? '统一灰模'
-          : '物理材质 / 柔光棚';
+        : state.stripes
+          ? '条带高光检查'
+          : state.uniformGray
+            ? '统一灰模'
+            : '物理材质 / 柔光棚';
     const caption = document.querySelector('#view-caption');
     if (caption)
       caption.textContent = state.geometryView
-        ? `${state.focus === 'case' ? '盒盖' : '单耳'}正交${{ top: '顶视', front: '正视', side: '侧视' }[state.geometryView]} · 轮廓检查`
+        ? `${state.focus === 'case' ? '盒盖' : '单耳'}正交${GEOMETRY_VIEWS[state.geometryView].label} · 形态检查`
         : state.shot === 'detail'
           ? '单耳特写 · 材质研究'
           : state.shot === 'closed'

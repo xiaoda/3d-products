@@ -1,0 +1,50 @@
+[
+  {
+    "file": "src/model/earbudDefinition.ts",
+    "before": "c0922faef5414c93fad73d3a2d83860bc73616a8bb7c30ecab70be05a830dc6d",
+    "after": "c0922faef5414c93fad73d3a2d83860bc73616a8bb7c30ecab70be05a830dc6d",
+    "unchanged": true
+  },
+  {
+    "file": "src/model/createEarbudShell.ts",
+    "before": "59767e6e4c7defb73d1994853d779fc31cb426ce2f5156ed04afa8ebf3279f6a",
+    "after": "59767e6e4c7defb73d1994853d779fc31cb426ce2f5156ed04afa8ebf3279f6a",
+    "unchanged": true
+  },
+  {
+    "file": "src/model/earbudFeatures.ts",
+    "before": "c047c952b3f935325b08bdb6c5b294e607f9a8aff8416219de84e2316d90d46c",
+    "after": "c047c952b3f935325b08bdb6c5b294e607f9a8aff8416219de84e2316d90d46c",
+    "unchanged": true
+  },
+  {
+    "file": "src/model/createDetailedEarbud.ts",
+    "before": "41c8b0b1292ef0a4578c7b8e8f0d27f744f3201d3270977037c41b4d41078dd5",
+    "after": "41c8b0b1292ef0a4578c7b8e8f0d27f744f3201d3270977037c41b4d41078dd5",
+    "unchanged": true
+  },
+  {
+    "file": "src/model/createCase.ts",
+    "before": "d3724dbb963c7105d106595bfc3f3fc3c4e7be3cc6532179aea5ea2a18e9fc9e",
+    "after": "d3724dbb963c7105d106595bfc3f3fc3c4e7be3cc6532179aea5ea2a18e9fc9e",
+    "unchanged": true
+  },
+  {
+    "file": "src/model/caseSurface.ts",
+    "before": "0ac56c3bad0f3b6f80f444be6a0ca03f27fae03b34bc3fc8b1c12e87f8cd0713",
+    "after": "0ac56c3bad0f3b6f80f444be6a0ca03f27fae03b34bc3fc8b1c12e87f8cd0713",
+    "unchanged": true
+  },
+  {
+    "file": "src/model/profiles.ts",
+    "before": "e41224185ad7bf4afbba53e8b85d3d44aa73272ba181257e35f77c1ba5616c3c",
+    "after": "e41224185ad7bf4afbba53e8b85d3d44aa73272ba181257e35f77c1ba5616c3c",
+    "unchanged": true
+  },
+  {
+    "file": "src/config/product.ts",
+    "before": "df5e8598e10f7a1b04b74d1ec080454fa136325146e5e8a4648ce2946bab5c4d",
+    "after": "df5e8598e10f7a1b04b74d1ec080454fa136325146e5e8a4648ce2946bab5c4d",
+    "unchanged": true
+  }
+]

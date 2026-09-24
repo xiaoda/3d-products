@@ -1,7 +1,6 @@
-import { BufferGeometry, Float32BufferAttribute, Mesh, Vector2, Vector3 } from 'three';
+import { BufferGeometry, Float32BufferAttribute, Vector2, Vector3 } from 'three';
 import { PRODUCT, mm } from '../config/product';
-import { createEarbud } from './createEarbud';
-import { createEarbudGeometry, earbudSurface } from './earbudSurface';
+import { createEarbudShellGeometry } from './createEarbudShell';
 
 export interface CavitySection {
   y: number;
@@ -30,32 +29,20 @@ function hull(points: Vector2[]): Vector2[] {
 }
 
 function buildProfiles(): Record<CavityKind, CavitySection[]> {
-  const ear = createEarbud('right');
+  // 采样已确认 B 外曲面，不创建细节、不计算附件包围盒、不按三个轴拉伸。
+  // C 特征均内收；后续回归仍以完整 C 显示网格和细网逐点/面采样核对。
+  const proxy = createEarbudShellGeometry({ segments: 64, longitudinalSegments: 96 });
   try {
-    // 腔体只需要未开孔的外包络。用同一曲面的低密度网格采样，避免将
-    // 显示用孔缘加密与细网罩重复扫描几十次；最终回归仍检查完整高密度耳机。
-    const shell = ear.getObjectByName('RightEarbudShell') as Mesh;
-    const normalization = ear.userData.normalization as { center: number[]; scale: number[] };
-    const proxy = createEarbudGeometry(earbudSurface, { segments: 64, subdivisions: 6 });
-    proxy.translate(-normalization.center[0], -normalization.center[1], -normalization.center[2]);
-    proxy.scale(normalization.scale[0], normalization.scale[1], normalization.scale[2]);
-    shell.geometry.dispose();
-    shell.geometry = proxy;
     const triangles: Vector3[][] = [];
-    ear.traverse((object) => {
-      if (!(object instanceof Mesh)) return;
-      if (object !== shell && !object.name.endsWith('ChargingContact')) return;
-      const p = object.geometry.getAttribute('position'),
-        index = object.geometry.index!;
-      for (let i = 0; i < index.count; i += 3)
-        triangles.push(
-          [0, 1, 2].map((j) =>
-            new Vector3()
-              .fromBufferAttribute(p, index.getX(i + j))
-              .add(new Vector3(0, mm(PRODUCT.assembly.seatY), 0)),
-          ),
-        );
-    });
+    const p = proxy.getAttribute('position'),
+      index = proxy.index!;
+    const translation = new Vector3(0, mm(PRODUCT.assembly.seatY), 0);
+    for (let i = 0; i < index.count; i += 3)
+      triangles.push(
+        [0, 1, 2].map((j) =>
+          new Vector3().fromBufferAttribute(p, index.getX(i + j)).add(translation),
+        ),
+      );
     const hingeY = mm(PRODUCT.assembly.hingeY),
       hingeZ = mm(PRODUCT.assembly.hingeZ);
     // 在盒盖自身坐标中包络开盖初段的耳机位置，做真实几何避让而非增大测试容差。
@@ -147,8 +134,10 @@ function buildProfiles(): Record<CavityKind, CavitySection[]> {
     const body: CavitySection[] = [],
       lid: CavitySection[] = [];
     // 顶盖与盒体分别密采样，墙体是这些同索引轮廓的线性连接。
-    for (let i = 0; i <= 54; i++) {
-      const y = bottom + 0.001 + ((seamLow - bottom - 0.001) * i) / 54;
+    // 新壳头颈过渡较快：增加实际槽壁层数，避免三角形对角线切入耳机。
+    // 不增大 clearance，也不改 insideCavity 的空间容差。
+    for (let i = 0; i <= 108; i++) {
+      const y = bottom + 0.001 + ((seamLow - bottom - 0.001) * i) / 108;
       body.push({ y, points: slice(y) });
     }
     const foot = body[0].points
@@ -166,15 +155,7 @@ function buildProfiles(): Record<CavityKind, CavitySection[]> {
     lid.push({ y: top + 0.09, points: [crown] });
     return { body, lid };
   } finally {
-    const materials = new Set<import('three').Material>();
-    ear.traverse((object) => {
-      if (object instanceof Mesh) {
-        object.geometry.dispose();
-        for (const m of Array.isArray(object.material) ? object.material : [object.material])
-          materials.add(m);
-      }
-    });
-    materials.forEach((m) => m.dispose());
+    proxy.dispose();
   }
 }
 

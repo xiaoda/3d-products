@@ -1,0 +1,24 @@
+{
+  "baseCommit": "636d080e72585b6dd0553941e4770a42af88d296",
+  "quality": {
+    "closed": true,
+    "euler": 2,
+    "minimumArea": 0.000018891534987744998,
+    "volume": 2.6949221366909746,
+    "maxDihedral": 11.56990760079495,
+    "percentile999": 10.193082592696223
+  },
+  "sizeMm": [
+    18.237951397895813,
+    30.199999809265137,
+    18.399091362953186
+  ],
+  "vertices": 24450,
+  "triangles": 48896,
+  "nonAdjacentIntersections": [],
+  "silhouettes": {
+    "top": 0.9555045871559633,
+    "front": 0.9739650872817955,
+    "side": 0.9599106871003755
+  }
+}
