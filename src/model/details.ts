@@ -5,18 +5,43 @@ import type { ProductMaterials } from './materials';
 
 export interface Recess {
   name: string;
-  y: number;
+  u: number;
   angle: number;
-  height: number;
+  radiusU: number;
   span: number;
   depth: number;
   grille: boolean;
 }
+/** u 为弯曲曲面的纵向参数，不是世界坐标高度。 */
 export const earRecesses: Recess[] = [
-  { name: 'Speaker', y: 0.64, angle: 2.28, height: 0.43, span: 0.47, depth: 0.08, grille: true },
-  { name: 'Sensor', y: 0.84, angle: 1.26, height: 0.135, span: 0.135, depth: 0.026, grille: false },
-  { name: 'OuterMic', y: 0.62, angle: -0.06, height: 0.29, span: 0.14, depth: 0.036, grille: true },
-  { name: 'Vent', y: 1.2, angle: 4.57, height: 0.12, span: 0.3, depth: 0.025, grille: true },
+  {
+    name: 'Speaker',
+    u: 0.909,
+    angle: -0.035,
+    radiusU: 0.03,
+    span: 0.82,
+    depth: 0.035,
+    grille: true,
+  },
+  {
+    name: 'Sensor',
+    u: 0.837,
+    angle: -0.227,
+    radiusU: 0.0175,
+    span: 0.255,
+    depth: 0.021,
+    grille: false,
+  },
+  {
+    name: 'OuterMic',
+    u: 0.529,
+    angle: -1.431,
+    radiusU: 0.058,
+    span: 0.67,
+    depth: 0.025,
+    grille: true,
+  },
+  { name: 'Vent', u: 0.732, angle: -1.047, radiusU: 0.042, span: 0.61, depth: 0.023, grille: true },
 ];
 
 export function recessedSurface(base: Surface): Surface {
@@ -25,7 +50,7 @@ export function recessedSurface(base: Surface): Surface {
     let inset = 0;
     for (const recess of earRecesses) {
       const delta = Math.atan2(Math.sin(angle - recess.angle), Math.cos(angle - recess.angle));
-      const radius = Math.hypot(delta / recess.span, (y - recess.y) / recess.height);
+      const radius = Math.hypot(delta / recess.span, (y - recess.u) / recess.radiusU);
       if (radius >= 1.1) continue;
       const t = Math.max(0, Math.min(1, (radius - 0.74) / 0.36));
       inset += recess.depth * (1 - t * t * (3 - 2 * t));
@@ -47,15 +72,15 @@ function patchGeometry(
   const count = 64,
     steps = 4;
   const add = (r: number, phi: number) => {
-    const y = recess.y + Math.sin(phi) * recess.height * r,
+    const y = recess.u + Math.sin(phi) * recess.radiusU * r,
       angle = recess.angle + Math.cos(phi) * recess.span * r;
     const p = surface(y, angle).addScaledVector(surfaceNormal(surface, y, angle), offset);
     positions.push(p.x, p.y, p.z);
   };
   const start = startRadius === 0 ? 1 : 0;
   if (start) {
-    const p = surface(recess.y, recess.angle).addScaledVector(
-      surfaceNormal(surface, recess.y, recess.angle),
+    const p = surface(recess.u, recess.angle).addScaledVector(
+      surfaceNormal(surface, recess.u, recess.angle),
       offset,
     );
     positions.push(p.x, p.y, p.z);
@@ -92,7 +117,7 @@ function grilleGeometry(surface: Surface, recess: Recess): BufferGeometry {
   const positions: number[] = [],
     indices: number[] = [];
   const add = (u: number, v: number) => {
-    const y = recess.y + v * recess.height,
+    const y = recess.u + v * recess.radiusU,
       a = recess.angle + u * recess.span;
     const p = surface(y, a).addScaledVector(surfaceNormal(surface, y, a), 0.011);
     positions.push(p.x, p.y, p.z);
@@ -150,8 +175,8 @@ export function createEarDetails(
   }
   const tip = new Mesh(new SphereGeometry(1, 32, 16), materials.get('contact'));
   tip.name = `${prefix}ChargingContact`;
-  tip.scale.set(0.241, 0.073, 0.217);
-  tip.position.set(0.28, -1.429, -0.27);
+  tip.scale.set(0.252, 0.05, 0.233);
+  tip.position.set(0.36, -1.455, -0.6);
   group.add(tip);
   return group;
 }

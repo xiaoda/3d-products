@@ -215,7 +215,10 @@ export function horizontalPlate(
       index.setX(i + 1, index.getX(i + 2));
       index.setX(i + 2, b);
     }
-    geometry.computeVertexNormals();
+    // Earcut 会保留胶囊直边上未引用的共线顶点；平面使用解析法线，
+    // 不能重算成这些顶点的零向量。
+    const normals = geometry.getAttribute('normal');
+    for (let i = 0; i < normals.count; i++) normals.setXYZ(i, 0, -1, 0);
   }
   return geometry;
 }

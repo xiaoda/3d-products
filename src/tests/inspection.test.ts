@@ -1,14 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { Box3, Mesh, Vector3 } from 'three';
 import { createProduct, disposeProduct, setProductPose, setLidAngle } from '../model/createProduct';
+import { PRODUCT } from '../config/product';
+import { caseDistance } from '../model/caseSurface';
 import { sampleProfile } from '../model/geometry';
-import {
-  bodyProfile,
-  lidProfile,
-  caseExponent,
-  wellProfile,
-  lidWellProfile,
-} from '../model/profiles';
+import { bodyProfile, lidProfile } from '../model/profiles';
+import { cavityProfile, insideCavity } from '../model/earbudCavity';
 
 describe('第二阶段静态装配', () => {
   it('精修耳机主体是单个连续网格，带有凹槽和接口细节', () => {
@@ -53,7 +50,9 @@ describe('第二阶段静态装配', () => {
     const product = createProduct();
     const bodyPosition = product.parts.caseBody.getWorldPosition(new Vector3());
     setLidAngle(product, 999);
-    expect(product.parts.lidPivot.rotation.x).toBeCloseTo((-Math.PI * 110) / 180);
+    expect(product.parts.lidPivot.rotation.x).toBeCloseTo(
+      (-Math.PI * PRODUCT.assembly.openAngle) / 180,
+    );
     expect(product.parts.caseBody.getWorldPosition(new Vector3()).distanceTo(bodyPosition)).toBe(0);
     setLidAngle(product, -30);
     expect(product.parts.lidPivot.rotation.x).toBe(0);
@@ -67,29 +66,29 @@ describe('第二阶段静态装配', () => {
         `${side === -1 ? 'Left' : 'Right'}EarbudShell`,
       ) as Mesh;
       const p = shell.geometry.getAttribute('position');
-      let maximum = 0;
+      const bodyCavity = cavityProfile('body', side),
+        lidCavity = cavityProfile('lid', side);
+      let collisions = 0;
       let worst: number[] = [];
       for (let i = 0; i < p.count; i++) {
         const v = new Vector3().fromBufferAttribute(p, i).applyMatrix4(shell.matrixWorld);
         if (v.y > bodyProfile.at(-1)!.y && v.y < lidProfile[0].y) continue;
-        const profile = v.y <= bodyProfile.at(-1)!.y ? wellProfile(side) : lidWellProfile(side);
-        const s = sampleProfile(profile, v.y);
-        const metric = ((v.x - s.cx) / s.rx) ** 2 + ((v.z - s.cz) / s.rz) ** 2;
-        if (metric > maximum) {
-          maximum = metric;
+        const profile = v.y <= bodyProfile.at(-1)!.y ? bodyCavity : lidCavity;
+        if (!insideCavity(profile, v)) {
+          collisions++;
           worst = v.toArray();
         }
       }
-      expect(maximum, `${side} 凹腔穿透位置 ${worst}`).toBeLessThanOrEqual(1.005);
+      expect(collisions, `${side} 凹腔穿透位置 ${worst}`).toBe(0);
     }
     disposeProduct(product.root);
   });
-  it('盒盖 0 至 110 度采样时不会进入盒体外壳包络', () => {
+  it('盒盖 0 至最大角度 度采样时不会进入盒体外壳包络', () => {
     const product = createProduct();
     setProductPose(product, 'closed');
     const shell = product.root.getObjectByName('LidOuterShell') as Mesh;
     const positions = shell.geometry.getAttribute('position');
-    for (const angle of [0, 5, 15, 30, 45, 60, 90, 110]) {
+    for (const angle of Array.from({ length: PRODUCT.assembly.openAngle + 1 }, (_, i) => i)) {
       setLidAngle(product, angle);
       product.root.updateMatrixWorld(true);
       let collisions = 0;
@@ -97,8 +96,8 @@ describe('第二阶段静态装配', () => {
         const v = new Vector3().fromBufferAttribute(positions, i).applyMatrix4(shell.matrixWorld);
         if (v.y >= bodyProfile.at(-1)!.y - 0.002 || v.y <= 0) continue;
         const s = sampleProfile(bodyProfile, v.y);
-        const metric = Math.abs(v.x / s.rx) ** caseExponent + Math.abs(v.z / s.rz) ** caseExponent;
-        if (metric < 0.995) collisions++;
+        const metric = caseDistance(s, v.x, v.z);
+        if (metric < -0.002) collisions++;
       }
       expect(collisions, `${angle} 度盒盖穿入盒体`).toBe(0);
     }
@@ -108,6 +107,8 @@ describe('第二阶段静态装配', () => {
     const product = createProduct();
     setProductPose(product, 'closed');
     const points: Vector3[] = [];
+    const leftCavity = cavityProfile('lid', -1),
+      rightCavity = cavityProfile('lid', 1);
     for (const name of ['LeftEarbudShell', 'RightEarbudShell']) {
       const shell = product.root.getObjectByName(name) as Mesh;
       const positions = shell.geometry.getAttribute('position');
@@ -116,7 +117,7 @@ describe('第二阶段静态装配', () => {
           new Vector3().fromBufferAttribute(positions, i).applyMatrix4(shell.matrixWorld),
         );
     }
-    for (const angle of [0, 5, 15, 30, 45, 60, 90, 110]) {
+    for (const angle of Array.from({ length: PRODUCT.assembly.openAngle + 1 }, (_, i) => i)) {
       setLidAngle(product, angle);
       product.root.updateMatrixWorld(true);
       let collisions = 0;
@@ -124,16 +125,8 @@ describe('第二阶段静态装配', () => {
         const p = product.parts.caseLid.worldToLocal(point.clone());
         if (p.y <= lidProfile[0].y || p.y >= lidProfile.at(-1)!.y) continue;
         const outer = sampleProfile(lidProfile, p.y);
-        if (
-          Math.abs(p.x / outer.rx) ** caseExponent + Math.abs(p.z / outer.rz) ** caseExponent >=
-          1
-        )
-          continue;
-        const cavity = lidWellProfile(p.x < 0 ? -1 : 1);
-        const s = sampleProfile(cavity, p.y);
-        const inCavity =
-          p.y < cavity.at(-1)!.y &&
-          ((p.x - s.cx) / s.rx) ** 2 + ((p.z - s.cz) / s.rz) ** 2 <= 1.005;
+        if (caseDistance(outer, p.x, p.z) >= 0) continue;
+        const inCavity = insideCavity(p.x < 0 ? leftCavity : rightCavity, p);
         if (!inCavity) collisions++;
       }
       expect(collisions, `${angle} 度时耳机进入盒盖`).toBe(0);

@@ -6,6 +6,7 @@ import {
   MeshBasicMaterial,
   MeshStandardMaterial,
   type Material,
+  OrthographicCamera,
   PerspectiveCamera,
   Scene,
   Sphere,
@@ -68,8 +69,11 @@ export function createScene(
     wireframe: true,
   });
   const sphere = new Sphere(),
-    camera = new PerspectiveCamera(32, 1, 0.1, 150);
-  const controls = new OrbitControls(camera, canvas);
+    perspective = new PerspectiveCamera(32, 1, 0.1, 150),
+    orthographic = new OrthographicCamera(-2, 2, 2, -2, 0.1, 150);
+  let camera: PerspectiveCamera | OrthographicCamera = perspective;
+  let geometryView: 'top' | 'front' | 'side' | null = null;
+  const controls = new OrbitControls<PerspectiveCamera | OrthographicCamera>(camera, canvas);
   controls.enablePan = false;
   controls.enableDamping = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   controls.dampingFactor = 0.09;
@@ -105,7 +109,19 @@ export function createScene(
     const damping = controls.enableDamping;
     controls.enableDamping = false;
     controls.update();
-    frameDistance = fitDistance(sphere.radius, camera.aspect, camera.fov) * frameScale;
+    const aspect = host.clientWidth / host.clientHeight;
+    frameDistance = fitDistance(sphere.radius, aspect, perspective.fov) * frameScale;
+    if (camera instanceof OrthographicCamera) {
+      const half = (sphere.radius * 1.12) / Math.min(1, aspect);
+      Object.assign(camera, {
+        left: -half * aspect,
+        right: half * aspect,
+        top: half,
+        bottom: -half,
+        zoom: 1,
+      });
+      camera.updateProjectionMatrix();
+    }
     controls.minDistance = Math.max(sphere.radius * 1.5, frameDistance * 0.56);
     controls.maxDistance = frameDistance * 1.8;
     controls.target.copy(sphere.center);
@@ -121,6 +137,9 @@ export function createScene(
     parts.rightEarbud.visible = focus === 'earbud' || !hideEarbuds;
   }
   function snapView(next: ViewName) {
+    geometryView = null;
+    camera = perspective;
+    controls.object = camera;
     shot = null;
     view = next;
     frameScale = CAMERA_PRESETS[next].distanceScale;
@@ -155,7 +174,9 @@ export function createScene(
     if (!width || !height) return;
     const ratio = camera.position.distanceTo(controls.target) / frameDistance,
       direction = camera.position.clone().sub(controls.target).normalize();
-    camera.aspect = width / height;
+    perspective.aspect = width / height;
+    perspective.updateProjectionMatrix();
+    const oldZoom = camera.zoom;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
     if (sphere.radius > 0) {
@@ -171,6 +192,10 @@ export function createScene(
           distance,
         );
       controls.update();
+      if (camera instanceof OrthographicCamera) {
+        camera.zoom = oldZoom;
+        camera.updateProjectionMatrix();
+      }
     }
   }
   const observer = new ResizeObserver(resize);
@@ -178,6 +203,7 @@ export function createScene(
   resize();
   setShot('open');
   const handleManual = () => {
+    geometryView = null;
     view = 'manual';
     shot = null;
     onManualView();
@@ -187,7 +213,7 @@ export function createScene(
   function tick() {
     if (disposed || document.hidden) return;
     controls.update();
-    studio.updateFloor(camera.position, focus !== 'earbud' && !wireframe);
+    studio.updateFloor(camera.position, focus !== 'earbud' && !wireframe && !geometryView);
     studio.renderContactShadow();
     renderer.render(scene, camera);
     raf = requestAnimationFrame(tick);
@@ -207,8 +233,26 @@ export function createScene(
   return {
     setView: snapView,
     setShot,
+    setGeometryView(next: 'top' | 'front' | 'side', subject: 'earbud' | 'case' = 'earbud') {
+      pose = subject === 'earbud' ? 'open' : 'closed';
+      setProductPose(product, pose);
+      shot = null;
+      geometryView = next;
+      view = next;
+      focus = subject;
+      hideEarbuds = subject === 'case';
+      camera = orthographic;
+      controls.object = camera;
+      controls.minZoom = 0.6;
+      controls.maxZoom = 2.2;
+      frameScale = 1;
+      showParts();
+      frame(directionFor(next));
+      notify();
+    },
     setPose,
     setLidAngle(degrees: number) {
+      if (geometryView || focus === 'earbud') snapView('perspective');
       pose = 'custom';
       shot = null;
       setLidAngle(product, degrees);
@@ -218,6 +262,9 @@ export function createScene(
     },
     setHideEarbuds(hidden: boolean) {
       if (focus === 'earbud') {
+        geometryView = null;
+        camera = perspective;
+        controls.object = camera;
         focus = 'product';
         view = 'perspective';
       }
@@ -241,6 +288,11 @@ export function createScene(
       setShot('open');
     },
     zoom(factor: number) {
+      if (camera instanceof OrthographicCamera) {
+        camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom / factor));
+        camera.updateProjectionMatrix();
+        return;
+      }
       const offset = camera.position.clone().sub(controls.target);
       const distance = Math.max(
         controls.minDistance,
@@ -253,6 +305,8 @@ export function createScene(
       return {
         pose,
         shot,
+        geometryView,
+        projection: camera instanceof OrthographicCamera ? 'orthographic' : 'perspective',
         view,
         focus,
         lidAngle: (-parts.lidPivot.rotation.x * 180) / Math.PI,
@@ -273,7 +327,7 @@ export function createScene(
         distance: camera.position.distanceTo(controls.target),
         minDistance: controls.minDistance,
         maxDistance: controls.maxDistance,
-        aspect: camera.aspect,
+        aspect: host.clientWidth / host.clientHeight,
         canvas: [canvas.width, canvas.height],
         meshes: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,

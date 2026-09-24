@@ -2,7 +2,9 @@ import { Group, Mesh } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { PRODUCT, mm } from '../config/product';
 import { createLoftGeometry, horizontalPlate, sectionContour, section } from './geometry';
-import { bodyProfile, lidProfile, caseExponent, wellProfile, lidWellProfile } from './profiles';
+import { bodyProfile, lidProfile } from './profiles';
+import { caseSurface, caseContour } from './caseSurface';
+import { cavityProfile, createCavityGeometry } from './earbudCavity';
 import { createCaseDetails } from './details';
 import { createProductMaterials, type ProductMaterials } from './materials';
 
@@ -14,7 +16,12 @@ export function createCase(materials: ProductMaterials = createProductMaterials(
   const clay = materials.get('plastic');
   const interiorClay = materials.get('interior');
   const outer = new Mesh(
-    createLoftGeometry(bodyProfile, { exponent: caseExponent, capStart: false, capEnd: false }),
+    createLoftGeometry(bodyProfile, {
+      surface: caseSurface(bodyProfile),
+      segments: 128,
+      capStart: false,
+      capEnd: false,
+    }),
     clay,
   );
   outer.name = 'CaseOuterShell';
@@ -25,12 +32,7 @@ export function createCase(materials: ProductMaterials = createProductMaterials(
     section(0.22, 0.43, 0.135),
   ];
   const bottom = new Mesh(
-    horizontalPlate(
-      sectionContour(bodyProfile[0], caseExponent),
-      [sectionContour(portProfile[0], 4)],
-      0,
-      false,
-    ),
+    horizontalPlate(caseContour(bodyProfile[0]), [sectionContour(portProfile[0], 4)], 0, false),
     clay,
   );
   bottom.name = 'CaseBottom';
@@ -52,21 +54,14 @@ export function createCase(materials: ProductMaterials = createProductMaterials(
   interior.name = 'CaseInterior';
   const holes = [];
   for (const side of [-1, 1] as const) {
-    const profile = wellProfile(side);
-    holes.push(sectionContour(profile.at(-1)!));
-    const well = new Mesh(
-      createLoftGeometry(profile, { inward: true, capEnd: false }),
-      interiorClay,
-    );
+    const profile = cavityProfile('body', side);
+    holes.push(profile.at(-1)!.points);
+    const well = new Mesh(createCavityGeometry(profile), interiorClay);
     well.name = side === -1 ? 'LeftWell' : 'RightWell';
     interior.add(well);
   }
   const deck = new Mesh(
-    horizontalPlate(
-      sectionContour(bodyProfile.at(-1)!, caseExponent),
-      holes,
-      bodyProfile.at(-1)!.y,
-    ),
+    horizontalPlate(caseContour(bodyProfile.at(-1)!), holes, bodyProfile.at(-1)!.y),
     clay,
   );
   deck.name = 'CaseRim';
@@ -74,11 +69,15 @@ export function createCase(materials: ProductMaterials = createProductMaterials(
   body.add(interior);
   const lidPivot = new Group();
   lidPivot.name = 'LidPivot';
-  lidPivot.position.set(0, mm(PRODUCT.case.seamHeight), mm(PRODUCT.assembly.hingeZ));
+  lidPivot.position.set(0, mm(PRODUCT.assembly.hingeY), mm(PRODUCT.assembly.hingeZ));
   const lid = new Group();
   lid.name = 'CaseLid';
   const lidOuter = new Mesh(
-    createLoftGeometry(lidProfile, { exponent: caseExponent, capStart: false }),
+    createLoftGeometry(lidProfile, {
+      surface: caseSurface(lidProfile),
+      segments: 128,
+      capStart: false,
+    }),
     clay,
   );
   lidOuter.name = 'LidOuterShell';
@@ -87,17 +86,14 @@ export function createCase(materials: ProductMaterials = createProductMaterials(
   lidInterior.name = 'LidInterior';
   const lidHoles = [];
   for (const side of [-1, 1] as const) {
-    const profile = lidWellProfile(side);
-    lidHoles.push(sectionContour(profile[0]));
-    const well = new Mesh(
-      createLoftGeometry(profile, { inward: true, capStart: false }),
-      interiorClay,
-    );
+    const profile = cavityProfile('lid', side);
+    lidHoles.push(profile[0].points);
+    const well = new Mesh(createCavityGeometry(profile), interiorClay);
     well.name = side === -1 ? 'LeftLidWell' : 'RightLidWell';
     lidInterior.add(well);
   }
   const lidRim = new Mesh(
-    horizontalPlate(sectionContour(lidProfile[0], caseExponent), lidHoles, lidProfile[0].y, false),
+    horizontalPlate(caseContour(lidProfile[0]), lidHoles, lidProfile[0].y, false),
     clay,
   );
   lidRim.name = 'LidRim';

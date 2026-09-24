@@ -1,8 +1,7 @@
 import { Box3, Group, Mesh, Vector3 } from 'three';
 import { PRODUCT, mm } from '../config/product';
-import { createLoftGeometry, profileSurface } from './geometry';
-import { earbudProfile } from './profiles';
-import { createEarDetails, recessedSurface } from './details';
+import { createEarbudGeometry, earbudSurface } from './earbudSurface';
+import { createEarDetails, recessedSurface, earRecesses } from './details';
 import { createProductMaterials, type ProductMaterials } from './materials';
 
 export type EarSide = 'left' | 'right';
@@ -13,11 +12,15 @@ export function createEarbud(
   const prefix = side === 'left' ? 'Left' : 'Right',
     group = new Group();
   group.name = `${prefix}Earbud`;
-  const surface = recessedSurface(profileSurface(earbudProfile, 2));
-  const geometry = createLoftGeometry(earbudProfile, { segments: 144, subdivisions: 10, surface });
+  const surface = recessedSurface(earbudSurface);
+  // 小开口附近加密纵向采样，避免孔缘落在稀疏环之间形成波浪形切边。
+  const detailSamples = earRecesses.flatMap((r) =>
+    Array.from({ length: 25 }, (_, i) => r.u + (r.radiusU * (i - 12)) / 10),
+  );
+  const geometry = createEarbudGeometry(surface, { detailSamples });
   const shell = new Mesh(geometry, materials.get('plastic'));
   shell.name = `${prefix}EarbudShell`;
-  shell.userData.surface = 'continuous-section-loft';
+  shell.userData.surface = 'bent-asymmetric-loft';
   group.add(shell, createEarDetails(surface, prefix, materials));
   group.updateMatrixWorld(true);
   const bounds = new Box3().setFromObject(group, true),
