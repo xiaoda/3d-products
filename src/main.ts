@@ -75,7 +75,7 @@ if (
     status.textContent = '预览不可用';
     document
       .querySelectorAll<HTMLButtonElement>(
-        '.viewer-toolbar button, [data-shot], .inspection-panel button, .inspection-panel input',
+        '.control-dock button, .inspection-panel button, .inspection-panel input',
       )
       .forEach((button) => {
         button.disabled = true;
@@ -100,13 +100,15 @@ if (
       disconnect();
       scene.dispose();
     };
-    // 仅开发模式提供只读诊断入口，不暴露可修改场景的全局句柄。
-    if (import.meta.env.DEV) {
+    // 开发检查需显式 ?debug=1，普通开发预览也保持沉浸式页面。
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('debug') === '1') {
+      const debugHost = document.querySelector<HTMLElement>('#debug-panel-host')!;
+      debugHost.hidden = false;
       const reviewLink = document.createElement('a');
       reviewLink.href = '?review=earbud-details';
       reviewLink.className = 'inspection-review-link';
-      reviewLink.textContent = '回看已确认 B / C 耳机 →（单耳曲面不变，本页收纳校准待验收）';
-      document.querySelector('.stage-summary')?.after(reviewLink);
+      reviewLink.textContent = '回看已确认的单耳曲面与细节 →';
+      debugHost.append(reviewLink);
       Object.defineProperty(window, '__stage03', {
         value: { inspect: scene.inspect },
         configurable: true,

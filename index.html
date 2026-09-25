@@ -3,57 +3,88 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f5f5f1" />
+    <meta name="theme-color" content="#f3f1eb" />
     <meta
       name="description"
-      content="AirPods 5 程序化建模研究。第三阶段：物理材质、摄影棚灯光与展示构图。"
+      content="AirPods 5 程序化三维产品展示。旋转、切换视角，观察充电盒与耳机的曲面、材质和光影。"
     />
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%232c5246'/%3E%3Cpath d='M12 12h16v16H12z' fill='none' stroke='%23e7ebdf' stroke-width='2'/%3E%3C/svg%3E"
     />
-    <title>AirPods 5 · 材质与光影研究</title>
+    <title>AirPods 5 · 交互式三维展示</title>
   </head>
   <body>
-    <header class="site-header">
-      <a class="brand" href="./" aria-label="产品研究室首页"
-        ><span class="brand-symbol" aria-hidden="true">◧</span> 产品研究室
-        <span class="brand-divider">/</span> <span class="brand-project">三维产品实验</span></a
-      >
-      <span class="stage-badge"><i aria-hidden="true"></i>阶段 03 · 材质与光影</span>
-    </header>
-
-    <main>
-      <section class="page-heading" aria-labelledby="page-title">
-        <div>
-          <p class="eyebrow">材质、反射与光影</p>
-          <h1 id="page-title">AirPods 5<span>光影研究。</span></h1>
+    <main class="showroom" aria-label="AirPods 5 三维产品展示">
+      <div id="viewport" class="viewport">
+        <div id="loading" class="loading" role="status">正在生成三维产品…</div>
+        <div id="viewer-error" class="viewer-error" role="alert" hidden>
+          <strong>暂时无法启动三维预览</strong>
+          <p id="error-message">请使用支持 WebGL 2 的浏览器。</p>
+          <button id="retry-button" type="button">重新加载</button>
         </div>
-        <p class="heading-note">让光线，描摹曲面。<br />纯程序化模型 · 摄影棚材质研究。</p>
-      </section>
+      </div>
 
-      <div class="workspace">
-        <section class="viewer-shell" aria-label="三维摄影棚展示台">
-          <div class="viewer-topline">
-            <span
-              ><i class="live-dot" aria-hidden="true"></i
-              ><span id="render-status">正在初始化</span></span
-            ><span class="mono">03 / 06</span>
+      <header class="showroom-header">
+        <div class="product-identity">
+          <span class="identity-mark" aria-hidden="true">◧</span>
+          <div>
+            <p class="identity-kicker">三维产品研究 <span> / 01</span></p>
+            <h1>AirPods 5</h1>
           </div>
-          <div id="viewport" class="viewport">
-            <div id="loading" class="loading" role="status">正在生成模型与摄影棚反射…</div>
-            <div id="viewer-error" class="viewer-error" role="alert" hidden>
-              <strong>暂时无法启动三维预览</strong>
-              <p id="error-message">请使用支持 WebGL 2 的浏览器。</p>
-              <button id="retry-button" type="button">重新加载</button>
-            </div>
-            <div class="viewer-bottomline">
-              <span id="view-caption">透视 · 开盖展示</span
-              ><span id="material-caption">物理材质 / 柔光棚</span>
-            </div>
+        </div>
+        <details class="product-info floating-panel" id="product-info">
+          <summary>产品信息 <span class="summary-chevron" aria-hidden="true"></span></summary>
+          <div class="info-content">
+            <p class="info-overline">关于这个模型</p>
+            <h2>光线，描摹曲面。</h2>
+            <p class="info-intro">
+              充电盒与左右耳机由 Three.js
+              程序化生成。拖动产品可自由观察；开合为静态构图切换，并非正式动画。
+            </p>
+            <dl class="info-specs">
+              <div>
+                <dt>充电盒</dt>
+                <dd>50.1 × 46.2 × 21.2 mm</dd>
+              </div>
+              <div>
+                <dt>单只耳机</dt>
+                <dd>18.3 × 30.2 × 18.1 mm</dd>
+              </div>
+              <div>
+                <dt>版本</dt>
+                <dd>标准充电盒</dd>
+              </div>
+            </dl>
+            <p class="info-footnote">
+              白色塑料、金属与网罩采用物理材质。尺寸为建模基准；本项目是展示近似，并非 Apple
+              官方页面或制造 CAD。
+            </p>
           </div>
-          <div class="viewer-toolbar" aria-label="产品观察工具">
-            <div class="view-buttons" role="group" aria-label="观察视角">
+        </details>
+      </header>
+
+      <div class="showroom-caption" aria-live="polite">
+        <span class="caption-rule" aria-hidden="true"></span>
+        <span id="view-caption">开盖双耳 · 柔光棚</span>
+        <span class="caption-separator" aria-hidden="true">/</span>
+        <span id="material-caption">物理材质 / 柔光棚</span>
+      </div>
+      <p class="interaction-hint">拖动旋转 <span aria-hidden="true">·</span> 滚轮或双指缩放</p>
+
+      <nav class="control-dock" aria-label="产品展示操作">
+        <button id="lid-action" class="dock-action dock-primary" type="button" disabled>
+          <span class="dock-icon" aria-hidden="true">◒</span>
+          <span id="lid-action-label">合上盒盖</span>
+        </button>
+        <details class="view-selector floating-panel" id="view-selector">
+          <summary>
+            <span class="dock-icon" aria-hidden="true">⌘</span>视角
+            <span class="summary-chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="view-menu">
+            <p class="menu-label">选择观察方向</p>
+            <div class="view-grid" role="group" aria-label="观察视角">
               <button type="button" data-view="perspective" aria-pressed="true" disabled>
                 透视
               </button>
@@ -61,122 +92,37 @@
               <button type="button" data-view="side" aria-pressed="false" disabled>侧面</button>
               <button type="button" data-view="back" aria-pressed="false" disabled>背面</button>
               <button type="button" data-view="top" aria-pressed="false" disabled>顶部</button>
-              <button type="button" data-view="bottom" aria-pressed="false" disabled>底部</button
-              ><button type="button" data-view="interior" aria-pressed="false" disabled>内胆</button
-              ><button type="button" data-view="earbud" aria-pressed="false" disabled>
+              <button type="button" data-view="bottom" aria-pressed="false" disabled>底部</button>
+              <button type="button" data-view="interior" aria-pressed="false" disabled>
+                空盒内胆
+              </button>
+              <button type="button" data-view="earbud" aria-pressed="false" disabled>
                 单耳特写
               </button>
             </div>
-            <div class="zoom-buttons" role="group" aria-label="缩放和重置">
-              <button type="button" id="zoom-out" aria-label="缩小模型" title="缩小" disabled>
-                −
-              </button>
-              <button type="button" id="zoom-in" aria-label="放大模型" title="放大" disabled>
-                ＋
-              </button>
-              <span class="toolbar-divider" aria-hidden="true"></span>
-              <button type="button" id="reset-view" disabled>
-                <span aria-hidden="true">↺</span> 重置
-              </button>
+            <div class="menu-footer">
+              <span>缩放</span>
+              <div role="group" aria-label="缩放模型">
+                <button type="button" id="zoom-out" aria-label="缩小模型" disabled>−</button>
+                <button type="button" id="zoom-in" aria-label="放大模型" disabled>＋</button>
+              </div>
             </div>
           </div>
-          <p class="gesture-hint">
-            <span aria-hidden="true">↔</span> 拖动旋转 <span class="hint-dot">·</span> 滚轮 /
-            双指缩放 <span class="hint-dot">·</span> 按钮可键盘操作
-          </p>
-          <div class="shot-bar" role="group" aria-label="摄影构图">
-            <span class="shot-label">摄影构图 <span>即时切换</span></span>
-            <button type="button" data-shot="closed" aria-pressed="false" disabled>
-              <span>01</span> 闭合主视觉
-            </button>
-            <button type="button" data-shot="open" aria-pressed="true" disabled>
-              <span>02</span> 开盖双耳
-            </button>
-            <button type="button" data-shot="detail" aria-pressed="false" disabled>
-              <span>03</span> 单耳特写
-            </button>
-          </div>
-        </section>
+        </details>
+        <button id="reset-view" class="dock-action" type="button" disabled>
+          <span class="dock-icon" aria-hidden="true">↺</span>重置
+        </button>
+      </nav>
 
-        <aside class="study-panel" aria-label="阶段说明与模型参数">
-          <div class="panel-section stage-summary">
-            <span class="section-index">当前阶段</span>
-            <h2>材质与光影<span class="outlined-number" aria-hidden="true">03</span></h2>
-            <p>白色塑料，细密网罩，银色触点。<br />在柔光下，观察不同表面的反射。</p>
-          </div>
-          <div class="panel-section material-legend">
-            <h3>表面研究 <span class="muted mono">PBR</span></h3>
-            <ul>
-              <li>
-                <i class="material-swatch plastic-swatch" aria-hidden="true"></i
-                ><span>亮面白塑料<small>外壳 · 柔和清漆高光</small></span>
-              </li>
-              <li>
-                <i class="material-swatch metal-swatch" aria-hidden="true"></i
-                ><span>银色金属<small>铰链与触点 · 环境反射</small></span>
-              </li>
-              <li>
-                <i class="material-swatch grille-swatch" aria-hidden="true"></i
-                ><span>深色网罩<small>真实几何细网 · 哑光衬底</small></span>
-              </li>
-            </ul>
-          </div>
-          <div class="panel-section">
-            <h3>模型组成 <span class="muted mono">04</span></h3>
-            <ul class="parts-list">
-              <li>
-                <span><i class="part-icon case-icon" aria-hidden="true"></i>充电盒</span
-                ><span class="part-code">主体</span>
-              </li>
-              <li>
-                <span><i class="part-icon lid-icon" aria-hidden="true"></i>盒盖</span
-                ><span class="part-code">独立节点</span>
-              </li>
-              <li>
-                <span><i class="part-icon ear-icon" aria-hidden="true"></i>左耳机</span
-                ><span class="part-code">独立节点</span>
-              </li>
-              <li>
-                <span><i class="part-icon ear-icon mirrored" aria-hidden="true"></i>右耳机</span
-                ><span class="part-code">独立节点</span>
-              </li>
-            </ul>
-          </div>
-          <div class="panel-section">
-            <h3>尺寸基准 <span class="muted mono">mm</span></h3>
-            <dl class="dimensions">
-              <div>
-                <dt>充电盒 · 宽 × 高 × 深</dt>
-                <dd>50.1 <span>×</span> 46.2 <span>×</span> 21.2</dd>
-              </div>
-              <div>
-                <dt>单只耳机 · 宽 × 高 × 深</dt>
-                <dd>18.3 <span>×</span> 30.2 <span>×</span> 18.1</dd>
-              </div>
-            </dl>
-            <p class="variant-note">
-              标准充电盒版 · 上表为尺寸基准。耳机实模约 18.24 × 30.20 × 18.39
-              mm，不做三轴包围盒拉伸。
-            </p>
-          </div>
-          <div class="scope-note">
-            <span class="scope-marker" aria-hidden="true">↳</span>
-            <div>
-              <strong>收纳校准：姿态与内腔同步</strong>
-              <p>
-                按官网图校准双耳朝向与位置，使用同一刚体变换重建收纳槽和盒盖凹腔。已确认耳机曲面与充电盒外轮廓未改；仍为展示近似，不是制造
-                CAD，不含正式开合动画。
-              </p>
-            </div>
-          </div>
-        </aside>
-      </div>
-      <footer class="page-footer">
-        <span>Three.js 程序化建模 <span class="footer-slash">/</span> 运行时无外部产品模型</span
-        ><span>单耳曲面已确认 · 收纳校准待验收</span>
-      </footer>
+      <span class="render-status" id="render-status" role="status">正在初始化</span>
+      <aside
+        id="debug-panel-host"
+        class="debug-panel-host"
+        aria-label="几何开发检查"
+        hidden
+      ></aside>
     </main>
-    <noscript>此展示需要启用 JavaScript。当前为材质与灯光阶段，包含充电盒与左右耳机。</noscript>
+    <noscript>此展示需要启用 JavaScript，才能查看和操作三维产品。</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -1,5 +1,4 @@
 import type { ProductScene, ViewName } from '../scene/createScene';
-import type { ShotName } from '../scene/cameraPresets';
 import { GEOMETRY_VIEWS } from '../scene/geometryViews';
 const labels: Record<ViewName, string> = {
   perspective: '透视',
@@ -19,12 +18,16 @@ export function markView(view: ViewName | 'manual') {
 export function connectControls(scene: ProductScene): () => void {
   const abort = new AbortController(),
     options = { signal: abort.signal };
+  const lidAction = document.querySelector<HTMLButtonElement>('#lid-action')!;
+  const lidLabel = document.querySelector<HTMLElement>('#lid-action-label')!;
+  const viewSelector = document.querySelector<HTMLDetailsElement>('#view-selector')!;
+  const info = document.querySelector<HTMLDetailsElement>('#product-info')!;
   const refresh = () => {
     const state = scene.inspect();
     markView(state.geometryView ? 'manual' : state.view);
-    document
-      .querySelectorAll<HTMLButtonElement>('[data-shot]')
-      .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.shot === state.shot)));
+    const nextAction = state.pose === 'closed' ? '打开盒盖' : '合上盒盖';
+    lidLabel.textContent = nextAction;
+    lidAction.setAttribute('aria-label', `${nextAction}（静态切换）`);
     const materialCaption = document.querySelector('#material-caption');
     if (materialCaption)
       materialCaption.textContent = state.wireframe
@@ -46,27 +49,57 @@ export function connectControls(scene: ProductScene): () => void {
               ? '开盖双耳 · 柔光棚'
               : `${state.view === 'manual' ? '自由观察' : labels[state.view]} · ${state.pose === 'closed' ? '闭合装配' : state.pose === 'open' ? '开盖检查' : state.pose === 'custom' ? '自定义开盖角度' : '分开展示'}`;
   };
-  document
-    .querySelectorAll<HTMLButtonElement>('.viewer-toolbar button, [data-shot]')
-    .forEach((b) => {
-      b.disabled = false;
-    });
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-shot]')
-    .forEach((b) =>
-      b.addEventListener('click', () => scene.setShot(b.dataset.shot as ShotName), options),
-    );
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-view]')
-    .forEach((b) =>
-      b.addEventListener('click', () => scene.setView(b.dataset.view as ViewName), options),
-    );
+  document.querySelectorAll<HTMLButtonElement>('.control-dock button').forEach((b) => {
+    b.disabled = false;
+  });
+  lidAction.addEventListener(
+    'click',
+    () => scene.setShot(scene.inspect().pose === 'closed' ? 'open' : 'closed'),
+    options,
+  );
+  document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((b) =>
+    b.addEventListener(
+      'click',
+      () => {
+        const view = b.dataset.view as ViewName;
+        if (view === 'earbud') scene.setShot('detail');
+        else scene.setView(view);
+        viewSelector.open = false;
+        viewSelector.querySelector('summary')?.focus();
+      },
+      options,
+    ),
+  );
   document.querySelector('#reset-view')?.addEventListener('click', () => scene.reset(), options);
   document.querySelector('#zoom-in')?.addEventListener('click', () => scene.zoom(0.87), options);
   document
     .querySelector('#zoom-out')
     ?.addEventListener('click', () => scene.zoom(1 / 0.87), options);
   document.querySelector('#viewport')?.addEventListener('modelchange', refresh, options);
+  document.addEventListener(
+    'pointerdown',
+    (event) => {
+      const target = event.target as Node;
+      if (!viewSelector.contains(target)) viewSelector.open = false;
+      if (!info.contains(target)) info.open = false;
+    },
+    options,
+  );
+  document.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key !== 'Escape') return;
+      if (viewSelector.open) {
+        viewSelector.open = false;
+        viewSelector.querySelector('summary')?.focus();
+      }
+      if (info.open) {
+        info.open = false;
+        info.querySelector('summary')?.focus();
+      }
+    },
+    options,
+  );
   refresh();
   return () => abort.abort();
 }
