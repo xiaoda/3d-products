@@ -37,7 +37,7 @@ export function connectControls(scene: ProductScene): () => void {
     const caption = document.querySelector('#view-caption');
     if (caption)
       caption.textContent = state.geometryView
-        ? `${state.focus === 'case' ? '盒盖' : '单耳'}正交${GEOMETRY_VIEWS[state.geometryView].label} · 形态检查`
+        ? `${state.focus === 'case' ? '盒盖' : state.focus === 'product' ? '收纳' : '单耳'}正交${GEOMETRY_VIEWS[state.geometryView].label} · 形态检查`
         : state.shot === 'detail'
           ? '单耳特写 · 材质研究'
           : state.shot === 'closed'

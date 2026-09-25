@@ -36,7 +36,7 @@ export function mountEarbudReview(phase: 'shell' | 'details' = 'shell') {
   document.title = `AirPods 5 · ${details ? '耳机细节评审' : '单耳裸壳评审'}`;
   document.body.innerHTML = `
     <div class="shell-review">
-      <header class="review-header"><a href="./">◧ 产品研究室 <span>/ 返回整套产品</span></a><span class="review-status">${details ? 'B / C / D 已验收 · 几何基线已确认' : '几何专项 · A / B · 用户已确认'}</span></header>
+      <header class="review-header"><a href="./">◧ 产品研究室 <span>/ 返回整套产品</span></a><span class="review-status">${details ? 'B / C 已确认 · 整套收纳校准待验收' : '几何专项 · A / B · 用户已确认'}</span></header>
       <main class="review-main">
         <section class="review-heading"><div><p class="eyebrow">${details ? '冻结主曲面，只恢复局部细节' : '只看形体，不用细节掩盖问题'}</p><h1>${details ? '耳机细节<span>局部恢复。' : '单耳裸壳<span>曲面评审。'}</span></h1></div><p>同一机位 · 同一比例 · 同一光照<br>${details ? '已接入整套产品；本页保留局部对照。' : '不含开孔与附件，保留已确认形体。'}</p></section>
         <div class="review-workspace">

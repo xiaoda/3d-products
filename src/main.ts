@@ -105,7 +105,7 @@ if (
       const reviewLink = document.createElement('a');
       reviewLink.href = '?review=earbud-details';
       reviewLink.className = 'inspection-review-link';
-      reviewLink.textContent = '回看已确认 B / C 耳机 →（本页整套装配已通过 D 验收）';
+      reviewLink.textContent = '回看已确认 B / C 耳机 →（单耳曲面不变，本页收纳校准待验收）';
       document.querySelector('.stage-summary')?.after(reviewLink);
       Object.defineProperty(window, '__stage03', {
         value: { inspect: scene.inspect },

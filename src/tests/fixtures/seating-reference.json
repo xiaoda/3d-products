@@ -1,0 +1,16 @@
+{
+  "source": "https://www.apple.com.cn/v/airpods-5/b/images/overview/contrast/explore_airpods_5_in__gadkl3bf562y_xlarge_2x.jpg",
+  "note": "用户提供图片上的人工近似关键点；仅按盒宽做统一比例比较，不代表真实三维测量。允许 2.5% 盒宽的参考图/投影差异。",
+  "imageWidth": 468,
+  "imageHeight": 684,
+  "caseLeft": 6,
+  "caseRight": 462,
+  "centerX": 234,
+  "rimY": 386,
+  "earTopY": 282,
+  "normalizedTolerance": 0.025,
+  "features": [
+    { "id": "sensor", "x": 281, "y": 347 },
+    { "id": "vent", "x": 333, "y": 298 }
+  ]
+}

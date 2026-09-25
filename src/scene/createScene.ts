@@ -86,6 +86,7 @@ export function createScene(
     orthographic = new OrthographicCamera(-2, 2, 2, -2, 0.1, 150);
   let camera: PerspectiveCamera | OrthographicCamera = perspective;
   let geometryView: GeometryView | null = null;
+  let localEarbudInspection = false;
   function createControls() {
     const orbit = new OrbitControls<PerspectiveCamera | OrthographicCamera>(camera, canvas);
     orbit.enablePan = false;
@@ -157,6 +158,11 @@ export function createScene(
     parts.rightEarbud.visible = focus === 'earbud' || !hideEarbuds;
   }
   function snapView(next: ViewName) {
+    // 单耳检查使用冻结局部坐标；回到整套产品必须恢复收纳姿态。
+    if (localEarbudInspection) {
+      setProductPose(product, 'open');
+      localEarbudInspection = false;
+    }
     geometryView = null;
     camera = perspective;
     controls.dispose();
@@ -177,12 +183,14 @@ export function createScene(
     notify();
   }
   function setPose(next: ProductPose) {
+    localEarbudInspection = false;
     pose = next;
     hideEarbuds = false;
     setProductPose(product, next);
     snapView('perspective');
   }
   function setShot(next: ShotName) {
+    localEarbudInspection = false;
     const preset = SHOTS[next];
     setProductPose(product, preset.pose);
     pose = preset.pose;
@@ -259,13 +267,19 @@ export function createScene(
   return {
     setView: snapView,
     setShot,
-    setGeometryView(next: GeometryView, subject: 'earbud' | 'case' = 'earbud') {
-      pose = subject === 'earbud' ? 'open' : 'closed';
+    setGeometryView(next: GeometryView, subject: 'earbud' | 'case' | 'seating' = 'earbud') {
+      pose = subject === 'case' ? 'closed' : 'open';
       setProductPose(product, pose);
+      localEarbudInspection = subject === 'earbud';
+      if (subject === 'earbud') {
+        parts.leftEarbud.rotation.set(0, 0, 0);
+        parts.rightEarbud.rotation.set(0, 0, 0);
+        root.updateMatrixWorld(true);
+      }
       shot = null;
       geometryView = next;
       view = next in CAMERA_PRESETS ? (next as ViewName) : 'earbud';
-      focus = subject;
+      focus = subject === 'seating' ? 'product' : subject;
       hideEarbuds = subject === 'case';
       camera = orthographic;
       controls.dispose();
@@ -289,6 +303,10 @@ export function createScene(
     },
     setHideEarbuds(hidden: boolean) {
       if (focus === 'earbud') {
+        if (localEarbudInspection) {
+          setProductPose(product, 'open');
+          localEarbudInspection = false;
+        }
         geometryView = null;
         camera = perspective;
         controls.dispose();
@@ -300,7 +318,11 @@ export function createScene(
       hideEarbuds = hidden;
       shot = null;
       showParts();
-      frame(directionFor(view === 'manual' ? 'perspective' : view));
+      frame(
+        geometryView
+          ? new Vector3(...GEOMETRY_VIEWS[geometryView].direction)
+          : directionFor(view === 'manual' ? 'perspective' : view),
+      );
       notify();
     },
     setInspectionMaterial(options: {
@@ -347,6 +369,8 @@ export function createScene(
         pose,
         shot,
         geometryView,
+        localEarbudInspection,
+        modelPose: root.userData.pose,
         projection: camera instanceof OrthographicCamera ? 'orthographic' : 'perspective',
         view,
         focus,
@@ -369,6 +393,7 @@ export function createScene(
         up: camera.up.toArray(),
         zoom: camera.zoom,
         earbudRotation: parts.rightEarbud.rotation.toArray(),
+        earbudPosition: parts.rightEarbud.position.toArray(),
         target: controls.target.toArray(),
         distance: camera.position.distanceTo(controls.target),
         minDistance: controls.minDistance,

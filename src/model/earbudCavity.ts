@@ -1,6 +1,7 @@
 import { BufferGeometry, Float32BufferAttribute, Vector2, Vector3 } from 'three';
 import { PRODUCT, mm } from '../config/product';
 import { createEarbudShellGeometry } from './createEarbudShell';
+import { seatedEarbudTransform } from './earbudPlacement';
 
 export interface CavitySection {
   y: number;
@@ -33,16 +34,14 @@ function buildProfiles(): Record<CavityKind, CavitySection[]> {
   // C 特征均内收；后续回归仍以完整 C 显示网格和细网逐点/面采样核对。
   const proxy = createEarbudShellGeometry({ segments: 64, longitudinalSegments: 96 });
   try {
+    // 和正式右耳共享刚体坐标；随后只在 X 上镜像整套腔体，不二次平移。
+    proxy.applyMatrix4(seatedEarbudTransform(1));
+    proxy.computeBoundingBox();
     const triangles: Vector3[][] = [];
     const p = proxy.getAttribute('position'),
       index = proxy.index!;
-    const translation = new Vector3(0, mm(PRODUCT.assembly.seatY), 0);
     for (let i = 0; i < index.count; i += 3)
-      triangles.push(
-        [0, 1, 2].map((j) =>
-          new Vector3().fromBufferAttribute(p, index.getX(i + j)).add(translation),
-        ),
-      );
+      triangles.push([0, 1, 2].map((j) => new Vector3().fromBufferAttribute(p, index.getX(i + j))));
     const hingeY = mm(PRODUCT.assembly.hingeY),
       hingeZ = mm(PRODUCT.assembly.hingeZ);
     // 在盒盖自身坐标中包络开盖初段的耳机位置，做真实几何避让而非增大测试容差。
@@ -127,8 +126,8 @@ function buildProfiles(): Record<CavityKind, CavitySection[]> {
         return center.clone().addScaledVector(d, radius);
       });
     };
-    const bottom = mm(PRODUCT.assembly.seatY - PRODUCT.earbud.height / 2);
-    const top = mm(PRODUCT.assembly.seatY + PRODUCT.earbud.height / 2);
+    const bottom = proxy.boundingBox!.min.y;
+    const top = proxy.boundingBox!.max.y;
     const seamLow = mm(PRODUCT.case.seamHeight - PRODUCT.case.seamGap / 2);
     const seamHigh = mm(PRODUCT.case.seamHeight + PRODUCT.case.seamGap / 2);
     const body: CavitySection[] = [],
@@ -164,7 +163,7 @@ export function cavityProfile(kind: CavityKind, side: -1 | 1): CavitySection[] {
   return cache[kind].map((section) => ({
     y: section.y,
     points: (side === 1 ? section.points : [...section.points].reverse()).map(
-      (p) => new Vector2(side * (p.x + mm(PRODUCT.assembly.seatX)), p.y),
+      (p) => new Vector2(side * p.x, p.y),
     ),
   }));
 }

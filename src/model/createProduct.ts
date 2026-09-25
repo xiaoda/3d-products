@@ -1,8 +1,9 @@
 import { Group, Material, Mesh } from 'three';
 import { createCase } from './createCase';
 import { createEarbud } from './createEarbud';
-import { PRODUCT, mm } from '../config/product';
+import { PRODUCT } from '../config/product';
 import { createProductMaterials } from './materials';
+import { setSeatedEarbudPose } from './earbudPlacement';
 
 export type ProductPose = 'closed' | 'open' | 'separated';
 
@@ -55,8 +56,8 @@ export function setProductPose(
     right.rotation.set(-0.04, -0.28, -0.15);
     setLidAngle(product, PRODUCT.assembly.openAngle);
   } else {
-    left.position.set(-mm(PRODUCT.assembly.seatX), mm(PRODUCT.assembly.seatY), 0);
-    right.position.set(mm(PRODUCT.assembly.seatX), mm(PRODUCT.assembly.seatY), 0);
+    setSeatedEarbudPose(left, -1);
+    setSeatedEarbudPose(right, 1);
     setLidAngle(product, pose === 'open' ? PRODUCT.assembly.openAngle : 0);
   }
   product.root.userData.pose = pose;

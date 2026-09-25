@@ -21,7 +21,8 @@ export function mountModelInspection(scene: ProductScene): () => void {
       )
       .join('')}</div>
     <div class="inspection-poses" role="group" aria-label="盒盖正交轮廓检查"><button type="button" data-case-geometry="top">盒盖正交顶视</button><button type="button" data-case-geometry="front">盒盖正交正视</button></div>
-    <p class="inspection-note">单耳入口固定局部姿态与正交机位；后视无俯角。线框优先于条带、灰模。盒盖检查为闭合状态。普通视角恢复透视，不含开合动画。</p>`;
+    <div class="inspection-poses" role="group" aria-label="收纳装配正交检查"><button type="button" data-seating-geometry="front">收纳正交正视</button><button type="button" data-seating-geometry="top">收纳正交顶视</button></div>
+    <p class="inspection-note">收纳入口保留实际装配朝向，可隐藏耳机检查槽口；单耳入口清除收纳旋转。线框优先于条带、灰模。盒盖检查为闭合状态。普通视角恢复透视，不含开合动画。</p>`;
   document.querySelector('.stage-summary')?.after(panel);
   const abort = new AbortController(),
     options = { signal: abort.signal };
@@ -50,6 +51,14 @@ export function mountModelInspection(scene: ProductScene): () => void {
         ),
       );
     panel
+      .querySelectorAll<HTMLButtonElement>('[data-seating-geometry]')
+      .forEach((b) =>
+        b.setAttribute(
+          'aria-pressed',
+          String(s.focus === 'product' && b.dataset.seatingGeometry === s.geometryView),
+        ),
+      );
+    panel
       .querySelectorAll<HTMLButtonElement>('[data-case-geometry]')
       .forEach((b) =>
         b.setAttribute(
@@ -70,6 +79,15 @@ export function mountModelInspection(scene: ProductScene): () => void {
       b.addEventListener(
         'click',
         () => scene.setGeometryView(b.dataset.geometry as GeometryView),
+        options,
+      ),
+    );
+  panel
+    .querySelectorAll<HTMLButtonElement>('[data-seating-geometry]')
+    .forEach((b) =>
+      b.addEventListener(
+        'click',
+        () => scene.setGeometryView(b.dataset.seatingGeometry as 'top' | 'front', 'seating'),
         options,
       ),
     );
