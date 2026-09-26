@@ -6,13 +6,16 @@ import {
   MeshBasicMaterial,
   MeshStandardMaterial,
   type Material,
+  type Object3D,
   OrthographicCamera,
   PerspectiveCamera,
+  Raycaster,
   Scene,
   ShaderMaterial,
   Sphere,
   SRGBColorSpace,
   Vector3,
+  Vector2,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -27,6 +30,15 @@ import { fitDistance } from './framing';
 import { CAMERA_PRESETS, SHOTS, type ShotName, type ViewName } from './cameraPresets';
 import { createStudioLighting, STUDIO } from './lighting';
 import { GEOMETRY_VIEWS, type GeometryView } from './geometryViews';
+import { createMotionController } from '../interaction/controller';
+import { type MotionAction } from '../interaction/state';
+import { sampleCinematicFilm, type FilmId } from '../interaction/films';
+import { applyFilmMotion, resetFilmRig } from '../model/filmMotion';
+import { cinematicCamera } from './filmCamera';
+import { applyProductMotion } from '../model/productMotion';
+import { connectPicking } from '../interaction/picking';
+import { interpolateCamera, type CameraFrame } from './cameraMotion';
+import { PRODUCT } from '../config/product';
 
 export type { ViewName } from './cameraPresets';
 const directionFor = (view: ViewName) => new Vector3(...CAMERA_PRESETS[view].direction);
@@ -45,11 +57,19 @@ export function createScene(
   const canvas = renderer.domElement;
   canvas.setAttribute('aria-label', 'AirPods 5 摄影棚展示，可旋转观察塑料、金属与网罩材质');
   canvas.setAttribute('role', 'img');
+  canvas.tabIndex = 0;
   host.append(canvas);
   const scene = new Scene(),
     product = createProduct(),
     { root, parts } = product;
   scene.add(root);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const motion = createMotionController(reducedMotion);
+  let cameraTransition: { from: CameraFrame; to: CameraFrame; elapsed: number } | null = null;
+  let actionDirection: Vector3 | null = null;
+  let actionDistanceRatio = 1;
+  let lastTick = performance.now(),
+    lastNotice = 0;
   const originalMaterials = new Map<Mesh, Material | Material[]>();
   root.traverse((object) => {
     if (!(object instanceof Mesh)) return;
@@ -96,7 +116,6 @@ export function createScene(
     orbit.zoomSpeed = 0.75;
     orbit.minZoom = 0.6;
     orbit.maxZoom = 2.2;
-    orbit.addEventListener('start', handleManual);
     return orbit;
   }
   let controls = createControls();
@@ -157,10 +176,27 @@ export function createScene(
     parts.leftEarbud.visible = focus !== 'earbud' && !hideEarbuds;
     parts.rightEarbud.visible = focus === 'earbud' || !hideEarbuds;
   }
+  let filmActive = false;
+  function leaveFilm() {
+    if (!filmActive) return;
+    filmActive = false;
+    resetFilmRig(product);
+    applyProductMotion(product, motion.inspect().value);
+    camera.up.set(0, 1, 0);
+    studio.setFilmLighting(null);
+    // 微距不能直接沿用到手动取出/归位，否则会把完整产品推进近裁面。
+    frameScale = CAMERA_PRESETS.perspective.distanceScale;
+    frame(camera.position.clone().sub(controls.target));
+  }
   function snapView(next: ViewName) {
+    leaveFilm();
+    motion.stop();
+    cameraTransition = null;
+    actionDirection = null;
     // 单耳检查使用冻结局部坐标；回到整套产品必须恢复收纳姿态。
     if (localEarbudInspection) {
       setProductPose(product, 'open');
+      motion.sync({ lid: 1, extraction: 0 });
       localEarbudInspection = false;
     }
     geometryView = null;
@@ -176,6 +212,7 @@ export function createScene(
     if (view === 'interior') {
       pose = 'open';
       setProductPose(product, pose);
+      motion.sync({ lid: 1, extraction: 0 });
       hideEarbuds = true;
     } else if (view !== 'earbud') hideEarbuds = false;
     showParts();
@@ -183,19 +220,119 @@ export function createScene(
     notify();
   }
   function setPose(next: ProductPose) {
+    leaveFilm();
     localEarbudInspection = false;
     pose = next;
     hideEarbuds = false;
-    setProductPose(product, next);
+    motion.sync({ lid: next === 'closed' ? 0 : 1, extraction: next === 'separated' ? 1 : 0 });
+    applyProductMotion(product, motion.inspect().value);
     snapView('perspective');
   }
   function setShot(next: ShotName) {
+    leaveFilm();
     localEarbudInspection = false;
     const preset = SHOTS[next];
-    setProductPose(product, preset.pose);
+    motion.sync({
+      lid: preset.pose === 'closed' ? 0 : 1,
+      extraction: preset.pose === 'separated' ? 1 : 0,
+    });
+    applyProductMotion(product, motion.inspect().value);
     pose = preset.pose;
     snapView(preset.view);
     shot = next;
+    notify();
+  }
+  function currentCamera(): CameraFrame {
+    return { position: camera.position.clone(), target: controls.target.clone() };
+  }
+  function putCamera(next: CameraFrame) {
+    const damping = controls.enableDamping;
+    controls.enableDamping = false;
+    controls.update();
+    controls.target.copy(next.target);
+    camera.position.copy(next.position);
+    controls.update();
+    controls.enableDamping = damping;
+  }
+  function animateView(next: ViewName) {
+    const before = currentCamera();
+    snapView(next);
+    if (!reducedMotion) {
+      cameraTransition = { from: before, to: currentCamera(), elapsed: 0 };
+      putCamera(before);
+    }
+  }
+  function updateProductFromMotion() {
+    const state = motion.inspect();
+    if (state.mode === 'playing' || state.mode === 'paused') {
+      filmActive = true;
+      applyFilmMotion(product, sampleCinematicFilm(state.time, state.film));
+    } else applyProductMotion(product, state.value);
+    pose = root.userData.pose as ProductPose | 'custom';
+    shot = null;
+    studio.markDirty();
+  }
+  function movieCamera() {
+    const state = motion.inspect();
+    const sample = sampleCinematicFilm(state.time, state.film);
+    const next = cinematicCamera(
+      product,
+      sample,
+      host.clientWidth / host.clientHeight,
+      perspective.fov,
+    );
+    camera.up.copy(next.up);
+    studio.setFilmLighting(sample, next.target);
+    frameDistance = next.position.distanceTo(next.target);
+    controls.minDistance = frameDistance * 0.4;
+    controls.maxDistance = frameDistance * 3;
+    putCamera(next);
+  }
+  function prepareProduct() {
+    if (focus !== 'product' || geometryView || camera !== perspective) snapView('perspective');
+    localEarbudInspection = false;
+    geometryView = null;
+    focus = 'product';
+    hideEarbuds = false;
+    showParts();
+    cameraTransition = null;
+  }
+  function requestAction(action: MotionAction) {
+    if (motion.inspect().mode === 'action') return;
+    leaveFilm();
+    prepareProduct();
+    const direction = camera.position.clone().sub(controls.target).normalize();
+    const bounds = new Box3().setFromObject(root).getBoundingSphere(new Sphere());
+    actionDistanceRatio =
+      camera.position.distanceTo(controls.target) /
+      fitDistance(bounds.radius, host.clientWidth / host.clientHeight, perspective.fov);
+    if (motion.request(action)) {
+      actionDirection = direction;
+      updateProductFromMotion();
+      if (reducedMotion) frame(direction);
+    }
+    // 即使请求已到位，request 也会退出影片；同步界面，避免残留播放状态。
+    notify();
+  }
+  function playFilm() {
+    prepareProduct();
+    wireframe = false;
+    uniformGray = false;
+    stripeInspection = false;
+    for (const [mesh, material] of originalMaterials) mesh.material = material;
+    actionDirection = null;
+    motion.play();
+    updateProductFromMotion();
+    movieCamera();
+    lastTick = performance.now();
+    notify();
+  }
+  function seekFilm(seconds: number) {
+    prepareProduct();
+    actionDirection = null;
+    motion.seek(seconds);
+    updateProductFromMotion();
+    movieCamera();
     notify();
   }
   function resize() {
@@ -209,6 +346,12 @@ export function createScene(
     const oldZoom = camera.zoom;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
+    const mode = motion.inspect().mode;
+    if (mode === 'playing' || mode === 'paused') {
+      movieCamera();
+      return;
+    }
+    cameraTransition = null;
     if (sphere.radius > 0) {
       frame(direction.lengthSq() ? direction : directionFor('perspective'));
       const distance = Math.max(
@@ -233,14 +376,53 @@ export function createScene(
   resize();
   setShot('open');
   function handleManual() {
+    leaveFilm();
+    motion.stop();
+    cameraTransition = null;
+    actionDirection = null;
     geometryView = null;
     view = 'manual';
     shot = null;
     onManualView();
     notify();
   }
-  function tick() {
+  function tick(now = performance.now()) {
     if (disposed || failed || document.hidden) return;
+    const delta = Math.max(0, (now - lastTick) / 1000);
+    lastTick = now;
+    const previousMode = motion.inspect().mode;
+    if (motion.update(delta)) {
+      updateProductFromMotion();
+      const state = motion.inspect();
+      if (state.mode === 'playing' || state.mode === 'paused') movieCamera();
+      else if (actionDirection) {
+        const bounds = new Box3().setFromObject(root).getBoundingSphere(new Sphere());
+        const distance =
+          fitDistance(bounds.radius, host.clientWidth / host.clientHeight, perspective.fov) *
+          actionDistanceRatio;
+        controls.maxDistance = Math.max(controls.maxDistance, distance * 1.8);
+        putCamera({
+          target: bounds.center,
+          position: bounds.center.clone().addScaledVector(actionDirection, distance),
+        });
+        if (state.mode === 'idle') actionDirection = null;
+      }
+      if (now - lastNotice > 90 || state.mode !== previousMode) {
+        host.dispatchEvent(new CustomEvent('modelchange'));
+        lastNotice = now;
+      }
+    }
+    if (cameraTransition) {
+      cameraTransition.elapsed += delta;
+      putCamera(
+        interpolateCamera(
+          cameraTransition.from,
+          cameraTransition.to,
+          cameraTransition.elapsed / 0.8,
+        ),
+      );
+      if (cameraTransition.elapsed >= 0.8) cameraTransition = null;
+    }
     controls.update();
     studio.updateFloor(
       camera.position,
@@ -252,24 +434,73 @@ export function createScene(
   }
   const onVisibility = () => {
     cancelAnimationFrame(raf);
+    lastTick = performance.now();
     if (!document.hidden && !disposed) tick();
   };
   const handleLost = (event: Event) => {
     event.preventDefault();
     failed = true;
+    motion.pause();
     controls.enabled = false;
     cancelAnimationFrame(raf);
     onContextLost();
   };
   document.addEventListener('visibilitychange', onVisibility);
   canvas.addEventListener('webglcontextlost', handleLost);
+  const raycaster = new Raycaster();
+  const disconnectPicking = connectPicking(
+    canvas,
+    (x, y) => {
+      if (failed || disposed || geometryView || focus !== 'product') return;
+      const rect = canvas.getBoundingClientRect();
+      raycaster.setFromCamera(
+        new Vector2(
+          ((x - rect.left) / rect.width) * 2 - 1,
+          (-(y - rect.top) / rect.height) * 2 + 1,
+        ),
+        camera,
+      );
+      const hit = raycaster.intersectObjects(
+        [parts.caseAssembly, parts.leftEarbud, parts.rightEarbud],
+        true,
+      )[0];
+      for (let node: Object3D | undefined = hit?.object; node; node = node.parent ?? undefined) {
+        if (node === parts.caseLid) {
+          requestAction(motion.inspect().value.lid < 0.5 ? 'open' : 'close');
+          break;
+        }
+      }
+    },
+    handleManual,
+  );
   tick();
   return {
-    setView: snapView,
+    setView: animateView,
+    selectFilm(id: FilmId) {
+      prepareProduct();
+      motion.selectFilm(id);
+      playFilm();
+    },
     setShot,
+    requestAction,
+    playFilm,
+    pauseFilm() {
+      motion.pause();
+      notify();
+    },
+    seekFilm,
+    setFilmLoop(loop: boolean) {
+      motion.setLoop(loop);
+      notify();
+    },
     setGeometryView(next: GeometryView, subject: 'earbud' | 'case' | 'seating' = 'earbud') {
+      leaveFilm();
+      motion.stop();
+      cameraTransition = null;
+      actionDirection = null;
       pose = subject === 'case' ? 'closed' : 'open';
       setProductPose(product, pose);
+      motion.sync({ lid: pose === 'closed' ? 0 : 1, extraction: 0 });
       localEarbudInspection = subject === 'earbud';
       if (subject === 'earbud') {
         parts.leftEarbud.rotation.set(0, 0, 0);
@@ -293,15 +524,28 @@ export function createScene(
     },
     setPose,
     setLidAngle(degrees: number) {
+      leaveFilm();
+      motion.stop();
+      cameraTransition = null;
+      actionDirection = null;
       if (geometryView || focus === 'earbud') snapView('perspective');
       pose = 'custom';
       shot = null;
       setLidAngle(product, degrees);
+      motion.sync({
+        lid: Math.max(0, Math.min(1, degrees / PRODUCT.assembly.openAngle)),
+        extraction: 0,
+      });
+      applyProductMotion(product, motion.inspect().value);
       root.updateMatrixWorld(true);
       frame(camera.position.clone().sub(controls.target));
       notify();
     },
     setHideEarbuds(hidden: boolean) {
+      leaveFilm();
+      motion.stop();
+      cameraTransition = null;
+      actionDirection = null;
       if (focus === 'earbud') {
         if (localEarbudInspection) {
           setProductPose(product, 'open');
@@ -344,6 +588,10 @@ export function createScene(
       notify();
     },
     reset() {
+      leaveFilm();
+      motion.reset();
+      cameraTransition = null;
+      actionDirection = null;
       wireframe = false;
       uniformGray = false;
       stripeInspection = false;
@@ -351,9 +599,14 @@ export function createScene(
       setShot('open');
     },
     zoom(factor: number) {
+      leaveFilm();
+      motion.stop();
+      cameraTransition = null;
+      actionDirection = null;
       if (camera instanceof OrthographicCamera) {
         camera.zoom = Math.max(controls.minZoom, Math.min(controls.maxZoom, camera.zoom / factor));
         camera.updateProjectionMatrix();
+        notify();
         return;
       }
       const offset = camera.position.clone().sub(controls.target);
@@ -363,9 +616,12 @@ export function createScene(
       );
       camera.position.copy(controls.target).addScaledVector(offset.normalize(), distance);
       controls.update();
+      notify();
     },
     inspect() {
       return {
+        animation: motion.inspect(),
+        cameraMoving: !!cameraTransition,
         pose,
         shot,
         geometryView,
@@ -409,9 +665,10 @@ export function createScene(
     dispose() {
       if (disposed) return;
       disposed = true;
+      motion.dispose();
+      disconnectPicking();
       cancelAnimationFrame(raf);
       observer.disconnect();
-      controls.removeEventListener('start', handleManual);
       controls.dispose();
       document.removeEventListener('visibilitychange', onVisibility);
       canvas.removeEventListener('webglcontextlost', handleLost);

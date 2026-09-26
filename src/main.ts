@@ -73,9 +73,10 @@ if (
     error.hidden = false;
     document.querySelector<HTMLElement>('#error-message')!.textContent = message;
     status.textContent = '预览不可用';
+    host.dispatchEvent(new CustomEvent('viewererror'));
     document
       .querySelectorAll<HTMLButtonElement>(
-        '.control-dock button, .inspection-panel button, .inspection-panel input',
+        '.control-dock button, .film-panel button, .film-panel input, .inspection-panel button, .inspection-panel input',
       )
       .forEach((button) => {
         button.disabled = true;

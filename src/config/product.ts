@@ -20,5 +20,5 @@ export const PRODUCT = {
     hingeZ: -10.9,
     openAngle: 115,
   },
-  stage: 3,
+  stage: 4,
 } as const;

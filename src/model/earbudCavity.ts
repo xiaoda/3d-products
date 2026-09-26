@@ -63,7 +63,7 @@ function buildProfiles(): Record<CavityKind, CavitySection[]> {
           sweptTriangles.push(moved);
       }
     }
-    const slice = (y: number, source = triangles): Vector2[] => {
+    const slice = (y: number, source = triangles, motionRelief = 0): Vector2[] => {
       const points: Vector2[] = [];
       // 用相邻采样层的薄带包络防止头部下缘在两环之间突然出现，线性墙体切入外壳。
       const band = 0.04;
@@ -91,7 +91,7 @@ function buildProfiles(): Record<CavityKind, CavitySection[]> {
                 new Vector2(
                   Math.cos((i * Math.PI) / 8),
                   Math.sin((i * Math.PI) / 8),
-                ).multiplyScalar(clearance),
+                ).multiplyScalar(clearance + motionRelief),
               ),
           ),
         ),
@@ -137,7 +137,12 @@ function buildProfiles(): Record<CavityKind, CavitySection[]> {
     // 不增大 clearance，也不改 insideCavity 的空间容差。
     for (let i = 0; i <= 108; i++) {
       const y = bottom + 0.001 + ((seamLow - bottom - 0.001) * i) / 108;
-      body.push({ y, points: slice(y) });
+      // 连续拔出验证发现隐藏槽壁沿倾斜耳柄存在局部倒扣。
+      // 隐藏段做最多 0.55 mm 的实几何避让，向底端及 31 mm 上方渐隐；槽口/盒盖不变。
+      // 原静态间隙与 insideCavity 判据保持不变，不通过放宽碰撞阈值掩盖干涉。
+      const reliefT = Math.max(0, Math.min(1, (y - mm(13)) / mm(4), (mm(31) - y) / mm(2)));
+      const relief = (mm(0.55) * (1 - Math.cos(Math.PI * reliefT))) / 2;
+      body.push({ y, points: slice(y, triangles, relief) });
     }
     const foot = body[0].points
       .reduce((sum, p) => sum.add(p), new Vector2())

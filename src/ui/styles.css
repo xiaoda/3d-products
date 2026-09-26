@@ -676,3 +676,292 @@ noscript {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* 第四阶段：控制界面保持三个入口，播放时才展开时间线。 */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.action-icon {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+.play-shape {
+  fill: currentColor;
+  stroke: none;
+}
+.pause-shape {
+  display: none;
+  stroke-width: 2.8;
+}
+[data-playing='true'] .play-shape {
+  display: none;
+}
+[data-playing='true'] .pause-shape {
+  display: block;
+}
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 22px;
+}
+.action-grid button {
+  min-height: 42px;
+  padding: 8px;
+  border: 1px solid #ccdacb;
+  border-radius: 8px;
+  color: #315946;
+  background: #edf3e9;
+  font-size: 11px;
+}
+.action-grid button:hover {
+  background: #e0ebdb;
+}
+.film-panel {
+  position: absolute;
+  z-index: 5;
+  bottom: calc(clamp(54px, 4.7vw, 65px) + 75px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 360px;
+  max-width: calc(100% - 30px);
+  padding: 19px 22px 15px;
+  border: 1px solid #e1e5dd;
+  border-radius: 16px;
+  background: rgba(255, 255, 252, 0.96);
+  box-shadow: 0 16px 60px #182b2326;
+  backdrop-filter: blur(20px);
+}
+.film-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #4a6854;
+  font-size: 11px;
+}
+#film-time {
+  color: #7a8d7e;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+#film-progress {
+  width: 100%;
+  margin: 13px 0 9px;
+  height: 18px;
+  accent-color: #315946;
+  cursor: pointer;
+}
+.film-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  font-size: 10px;
+  color: #597361;
+}
+.film-options label {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  cursor: pointer;
+}
+.film-options input {
+  accent-color: #315946;
+}
+.film-options button {
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid #d8e1d4;
+  background: transparent;
+  color: #315946;
+  border-radius: 7px;
+  font-size: 10px;
+}
+.film-options button[aria-pressed='true'] {
+  background: #eaf1e7;
+  border-color: #c7d5c1;
+}
+.film-note {
+  margin-top: 10px;
+  color: #7a897d;
+  font-size: 9px;
+  letter-spacing: 0.015em;
+  text-align: center;
+}
+.showroom[data-format='portrait'] {
+  background: #1e2822;
+}
+.showroom[data-format='portrait']::after {
+  opacity: 0;
+}
+.showroom[data-format='portrait'] .viewport {
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(100vw, calc(100svh * 9 / 16));
+  height: min(100svh, calc(100vw * 16 / 9));
+}
+.showroom[data-format='portrait'] .product-identity h1,
+.showroom[data-format='portrait'] .identity-mark {
+  color: #e2ebdf;
+}
+.showroom[data-format='portrait'] .identity-kicker,
+.showroom[data-format='portrait'] .showroom-caption,
+.showroom[data-format='portrait'] .interaction-hint {
+  color: #a6bba9;
+}
+.showroom[data-film='true'] .debug-panel-host {
+  display: none;
+}
+.is-clean .showroom-header,
+.is-clean .control-dock,
+.is-clean .film-panel,
+.is-clean .showroom-caption,
+.is-clean .interaction-hint,
+.is-clean .debug-panel-host,
+.is-preparing .showroom-header,
+.is-preparing .control-dock,
+.is-preparing .film-panel,
+.is-preparing .showroom-caption,
+.is-preparing .interaction-hint,
+.is-preparing .debug-panel-host {
+  visibility: hidden;
+  pointer-events: none;
+}
+.is-clean canvas {
+  cursor: none;
+  outline: none;
+}
+.film-countdown {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 17px;
+  color: #fff;
+  background: #233b2c44;
+  backdrop-filter: blur(5px);
+}
+.film-countdown > span {
+  font-size: 76px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.film-countdown > p {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+@media (min-width: 1100px) {
+  .film-panel {
+    left: auto;
+    right: 48px;
+    bottom: 130px;
+    transform: none;
+    width: min(300px, calc((100vw - 100svh * 9 / 16) / 2 - 72px));
+  }
+}
+@media (max-width: 760px) {
+  .film-panel {
+    bottom: 129px;
+    padding: 16px 18px 12px;
+  }
+  .film-options button {
+    min-height: 40px;
+  }
+  .showroom[data-film='true'] .showroom-caption {
+    display: none;
+  }
+  .showroom[data-format='portrait']:not(.is-clean):not(.is-preparing) .viewport {
+    top: 78px;
+    transform: translateX(-50%);
+    height: max(180px, calc(100svh - 452px));
+    width: max(101.25px, calc((100svh - 452px) * 9 / 16));
+  }
+}
+@media (max-height: 600px) and (min-width: 761px) {
+  .film-panel {
+    bottom: 115px;
+  }
+}
+
+/* 三支短片共用一个紧凑选择器，不增加第四个主入口。 */
+.film-program {
+  margin-bottom: 16px;
+}
+.film-program-label {
+  display: block;
+  font-size: 10px;
+  color: #7a8d7e;
+  margin-bottom: 8px;
+}
+.film-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+.film-choices button {
+  min-height: 36px;
+  padding: 5px 2px;
+  border: 1px solid #d9e1d5;
+  border-radius: 6px;
+  background: transparent;
+  color: #597361;
+  font: inherit;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.film-choices button[aria-pressed='true'],
+.film-menu-choices button[aria-pressed='true'] {
+  background: #315946;
+  color: #fff;
+  border-color: #315946;
+}
+#film-description {
+  margin-top: 9px;
+  font-size: 9px;
+  color: #7a8d7e;
+  letter-spacing: 0.025em;
+}
+.film-menu-choices {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+.film-menu-choices button {
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid #d9e1d5;
+  border-radius: 6px;
+  background: #f6f8f3;
+  color: #315946;
+  font-size: 11px;
+}
+.film-menu-choices b {
+  display: inline-block;
+  width: 23px;
+  font-size: 10px;
+  font-weight: 400;
+}
+@media (max-width: 760px) {
+  .film-program {
+    margin-bottom: 12px;
+  }
+  .film-choices button {
+    min-height: 40px;
+  }
+}

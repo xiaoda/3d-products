@@ -1,0 +1,8 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`第四阶段隐藏槽壁避让不改变已验收槽口与盒盖内腔 1`] = `
+{
+  "lid": "0484f6f9c05424a23dcf915975bb41fdbd14c99271e75329446014035d11ecac",
+  "opening": "a64571aaa1bfa84dfad38d9eec8180f9bbbdb56ee96eb4a9af3fc34e6d34d4cf",
+}
+`;

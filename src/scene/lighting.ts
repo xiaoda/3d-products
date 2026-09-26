@@ -1,3 +1,4 @@
+import type { FilmSample } from '../interaction/films';
 import {
   Color,
   DirectionalLight,
@@ -10,6 +11,7 @@ import {
   PlaneGeometry,
   PMREMGenerator,
   Scene,
+  SpotLight,
   Vector3,
   type WebGLRenderer,
 } from 'three';
@@ -99,7 +101,11 @@ export function createStudioLighting(renderer: WebGLRenderer, scene: Scene) {
   fill.position.set(8, 5, 3);
   const rim = new DirectionalLight(0xffffff, 1.5);
   rim.position.set(0, 7, -7);
-  rig.add(ambient, key, key.target, fill, rim);
+  const sweepLight = new SpotLight(0xf3f6ff, 0, 40, 0.24, 0.85, 2);
+  sweepLight.name = 'CinematicSweep';
+  const filmBackground = new Color();
+  let filmFloor = true;
+  rig.add(ambient, key, key.target, fill, rim, sweepLight, sweepLight.target);
   scene.add(rig);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFShadowMap;
@@ -109,12 +115,29 @@ export function createStudioLighting(renderer: WebGLRenderer, scene: Scene) {
   const contact = createContactShadow(renderer, scene);
   let disposed = false;
   return {
+    setFilmLighting(sample: FilmSample | null, target = new Vector3(0, 4, 0)) {
+      const light = sample?.light;
+      scene.background = light ? filmBackground.setRGB(...light.background) : null;
+      scene.environmentIntensity = light?.environment ?? STUDIO.environmentIntensity;
+      scene.environmentRotation.y = (light?.sweep ?? 0) * 0.65;
+      ambient.intensity = light?.ambient ?? 0.45;
+      key.intensity = light?.key ?? 1.9;
+      fill.intensity = light?.fill ?? 0.9;
+      rim.intensity = light?.rim ?? 1.5;
+      key.position.set(-3 + (light?.sweep ?? 0) * 6, 13, 5);
+      rim.position.set((light?.sweep ?? 0) * 5, 7, -7);
+      sweepLight.intensity = light?.spot ?? 0;
+      sweepLight.position.set((light?.sweep ?? 0) * 7, 9, 7);
+      sweepLight.target.position.copy(target);
+      filmFloor = light?.floor ?? true;
+    },
     markDirty() {
       renderer.shadowMap.needsUpdate = true;
       contact.markDirty();
     },
     updateFloor(cameraPosition: Vector3, enabled: boolean) {
-      contact.floor.visible = enabled && cameraPosition.y > contact.floor.position.y + 0.1;
+      contact.floor.visible =
+        enabled && filmFloor && cameraPosition.y > contact.floor.position.y + 0.1;
     },
     renderContactShadow: contact.render,
     inspect() {

@@ -39,8 +39,8 @@
             <p class="info-overline">关于这个模型</p>
             <h2>光线，描摹曲面。</h2>
             <p class="info-intro">
-              充电盒与左右耳机由 Three.js
-              程序化生成。拖动产品可自由观察；开合为静态构图切换，并非正式动画。
+              充电盒与左右耳机由 Three.js 程序化生成。拖动产品可自由观察，也可以选择三种不同风格的
+              20 秒产品短片，切换竖屏画幅后使用净画面录屏。
             </p>
             <dl class="info-specs">
               <div>
@@ -70,19 +70,78 @@
         <span class="caption-separator" aria-hidden="true">/</span>
         <span id="material-caption">物理材质 / 柔光棚</span>
       </div>
-      <p class="interaction-hint">拖动旋转 <span aria-hidden="true">·</span> 滚轮或双指缩放</p>
+      <p class="interaction-hint">拖动旋转 <span aria-hidden="true">·</span> 点击盒盖开合</p>
+
+      <section id="film-panel" class="film-panel" aria-label="连续演示控制" hidden>
+        <div class="film-program">
+          <span class="film-program-label">选择短片 · 每段 20 秒</span>
+          <div class="film-choices" role="group" aria-label="选择演示短片">
+            <button type="button" data-film-id="reveal" aria-pressed="true">A 光影揭幕</button>
+            <button type="button" data-film-id="sculpture" aria-pressed="false">B 失重雕塑</button>
+            <button type="button" data-film-id="light" aria-pressed="false">C 光的旅行</button>
+          </div>
+          <p id="film-description">微距悬念 · 双耳编舞 · 擦镜转场</p>
+        </div>
+        <div class="film-heading">
+          <span id="film-phase">闭合亮相</span><output id="film-time">00:00 / 00:20</output>
+        </div>
+        <label class="visually-hidden" for="film-progress">演示进度（秒），调整后暂停</label>
+        <input id="film-progress" type="range" min="0" max="20" step="0.01" value="0" />
+        <div class="film-options">
+          <label><input id="film-loop" type="checkbox" checked />循环</label>
+          <button id="film-format" type="button" aria-pressed="true">9:16 竖屏</button>
+          <button
+            id="clean-view"
+            type="button"
+            title="三秒准备后隐藏界面并从头播放；Esc 或点击画面退出"
+          >
+            净画面录屏
+          </button>
+        </div>
+        <p class="film-note">录屏前准备 3 秒 · Esc 退出 · 空格暂停</p>
+      </section>
+      <div id="film-countdown" class="film-countdown" role="status" hidden>
+        <span id="countdown-number">3</span>
+        <p>准备录屏 · Esc 取消</p>
+      </div>
 
       <nav class="control-dock" aria-label="产品展示操作">
-        <button id="lid-action" class="dock-action dock-primary" type="button" disabled>
-          <span class="dock-icon" aria-hidden="true">◒</span>
-          <span id="lid-action-label">合上盒盖</span>
+        <button id="film-toggle" class="dock-action dock-primary" type="button" disabled>
+          <svg class="action-icon" viewBox="0 0 20 20" aria-hidden="true">
+            <path class="play-shape" d="m7 4 9 6-9 6Z" />
+            <path class="pause-shape" d="M6 4v12M14 4v12" />
+          </svg>
+          <span id="film-toggle-label">播放演示</span>
         </button>
         <details class="view-selector floating-panel" id="view-selector">
           <summary>
-            <span class="dock-icon" aria-hidden="true">⌘</span>视角
+            <svg class="action-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M3 6h14M3 14h14M7 3v6M13 11v6" /></svg
+            >操作
             <span class="summary-chevron" aria-hidden="true"></span>
           </summary>
           <div class="view-menu">
+            <p class="menu-label">选择短片 · 点击从头播放</p>
+            <div class="film-menu-choices" role="group" aria-label="短片选择">
+              <button type="button" data-film-id="reveal" aria-pressed="true" disabled>
+                <b>A</b> 光影揭幕
+              </button>
+              <button type="button" data-film-id="sculpture" aria-pressed="false" disabled>
+                <b>B</b> 失重雕塑
+              </button>
+              <button type="button" data-film-id="light" aria-pressed="false" disabled>
+                <b>C</b> 一束光的旅行
+              </button>
+            </div>
+            <p class="menu-label">产品动作</p>
+            <div class="action-grid">
+              <button id="lid-action" type="button" disabled>
+                <span id="lid-action-label">合上盒盖</span>
+              </button>
+              <button id="earbud-action" type="button" disabled>
+                <span id="earbud-action-label">取出双耳</span>
+              </button>
+            </div>
             <p class="menu-label">选择观察方向</p>
             <div class="view-grid" role="group" aria-label="观察视角">
               <button type="button" data-view="perspective" aria-pressed="true" disabled>
@@ -110,7 +169,9 @@
           </div>
         </details>
         <button id="reset-view" class="dock-action" type="button" disabled>
-          <span class="dock-icon" aria-hidden="true">↺</span>重置
+          <svg class="action-icon" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M4 7a6.5 6.5 0 1 1-.4 5M4 3v4h4" /></svg
+          >重置
         </button>
       </nav>
 
