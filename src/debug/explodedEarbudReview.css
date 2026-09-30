@@ -1,0 +1,228 @@
+.exploded-review {
+  --ink: #263630;
+  --muted: #7c857e;
+  --line: #d9dcd5;
+  min-height: 100svh;
+  color: var(--ink);
+  background: #f7f6f2;
+  padding: 24px 40px 18px;
+  font-family: 'Aptos', 'Microsoft YaHei', sans-serif;
+}
+.exploded-review * {
+  box-sizing: border-box;
+}
+.exploded-top {
+  max-width: 1160px;
+  margin: 0 auto 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.exploded-kicker {
+  font:
+    10px Georgia,
+    serif;
+  letter-spacing: 0.22em;
+  margin: 0 0 6px;
+  color: var(--muted);
+}
+.exploded-top h1 {
+  font:
+    400 20px 'Noto Serif SC',
+    SimSun,
+    serif;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+.exploded-top a {
+  font-size: 11px;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 10px 0;
+}
+.exploded-stage-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.exploded-stage {
+  width: min(460px, calc((100svh - 240px) * 0.5625));
+  min-width: 340px;
+  max-width: 100%;
+  aspect-ratio: 9/16;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 44% 32%, #fffefa 5%, #f0efea 52%, #dcdedb 100%);
+  box-shadow:
+    0 0 0 1px #263c2c08,
+    0 24px 50px -38px #25362b45;
+}
+.exploded-canvas {
+  position: absolute;
+  inset: 0;
+}
+.exploded-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+.exploded-canvas canvas:active {
+  cursor: grabbing;
+}
+.exploded-player {
+  width: min(460px, 100%);
+}
+.exploded-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.exploded-review button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 12px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.exploded-review button:hover:not(:disabled) {
+  background: #e7eae2;
+}
+.exploded-review button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.exploded-tabs {
+  display: flex;
+  gap: 2px;
+}
+.exploded-tabs button {
+  border: 0;
+  color: var(--muted);
+  padding: 8px 14px;
+}
+.exploded-tabs button[aria-pressed='true'] {
+  color: var(--ink);
+  background: #e4e8df;
+}
+.exploded-player-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.exploded-player-actions #exploded-play {
+  flex: 1;
+  color: #f7f7f0;
+  background: var(--ink);
+  border-color: var(--ink);
+  min-height: 40px;
+}
+.exploded-player-actions #exploded-play:hover:not(:disabled) {
+  background: #3f5146;
+}
+.exploded-player-actions label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.exploded-player input {
+  accent-color: #385444;
+}
+.exploded-scrubber {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+.exploded-scrubber input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.exploded-scrubber output {
+  font:
+    11px 'Bahnschrift',
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.exploded-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 10px;
+}
+#exploded-player-status {
+  margin: 0;
+  line-height: 1.7;
+}
+.exploded-disclaimer {
+  max-width: 680px;
+  margin: 22px auto 0;
+  color: #879086;
+  font-size: 10px;
+  line-height: 1.8;
+  text-align: center;
+}
+.exploded-error {
+  position: absolute;
+  inset: 30% 8%;
+  padding: 22px;
+  background: #f7f6f2;
+  border: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.9;
+}
+.exploded-error[hidden] {
+  display: none;
+}
+.exploded-review button:focus-visible,
+.exploded-review a:focus-visible,
+.exploded-review input:focus-visible,
+.exploded-review canvas:focus-visible {
+  outline: 2px solid #8b7549;
+  outline-offset: 3px;
+}
+.exploded-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .exploded-review {
+    padding: 18px 18px 20px;
+  }
+  .exploded-top {
+    margin-bottom: 18px;
+  }
+  .exploded-top h1 {
+    font-size: 18px;
+  }
+  .exploded-stage {
+    width: 100%;
+    min-width: 0;
+    max-width: 420px;
+  }
+  .exploded-stage-area {
+    gap: 16px;
+  }
+  .exploded-toolbar {
+    margin-bottom: 12px;
+  }
+}

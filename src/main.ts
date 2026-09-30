@@ -4,6 +4,29 @@ import { connectControls, markView } from './ui/controls';
 
 if (
   import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).get('review') === 'earbud-exploded'
+) {
+  let dispose = () => {};
+  let cancelled = false;
+  import('./debug/explodedEarbudReview')
+    .then(({ mountExplodedEarbudReview }) => {
+      if (!cancelled) dispose = mountExplodedEarbudReview().dispose;
+    })
+    .catch((cause) => {
+      console.error('结构评审加载失败', cause);
+      const loading = document.querySelector<HTMLElement>('#loading');
+      if (loading) loading.textContent = '结构评审加载失败，请刷新重试。';
+    });
+  const cleanup = () => {
+    cancelled = true;
+    dispose();
+  };
+  window.addEventListener('pagehide', (event) => {
+    if (!event.persisted) cleanup();
+  });
+  import.meta.hot?.dispose(cleanup);
+} else if (
+  import.meta.env.DEV &&
   ['earbud-shell', 'earbud-details'].includes(
     new URLSearchParams(window.location.search).get('review') ?? '',
   )
@@ -110,6 +133,11 @@ if (
       reviewLink.className = 'inspection-review-link';
       reviewLink.textContent = '回看已确认的单耳曲面与细节 →';
       debugHost.append(reviewLink);
+      const explodedLink = document.createElement('a');
+      explodedLink.href = '?review=earbud-exploded';
+      explodedLink.className = 'inspection-review-link';
+      explodedLink.textContent = '单耳内部结构示意 · 8 秒定机位展开预览 →';
+      debugHost.append(explodedLink);
       Object.defineProperty(window, '__stage03', {
         value: { inspect: scene.inspect },
         configurable: true,
