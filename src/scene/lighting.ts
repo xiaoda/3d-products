@@ -7,6 +7,7 @@ import {
   HemisphereLight,
   Mesh,
   MeshBasicMaterial,
+  type Object3D,
   PCFShadowMap,
   PlaneGeometry,
   PMREMGenerator,
@@ -68,7 +69,20 @@ export function disposeStudioEnvironment(environment: Scene) {
   environment.clear();
 }
 
-export function createStudioLighting(renderer: WebGLRenderer, scene: Scene) {
+export interface StudioLightingOptions {
+  /** 独立导出可注入布景；不影响默认 A/B/C，也不把布景纳入产品取景或反射环境。 */
+  createBackdrop?: (scene: Scene) => {
+    root: Object3D;
+    background: Scene['background'];
+    dispose: () => void;
+  };
+}
+
+export function createStudioLighting(
+  renderer: WebGLRenderer,
+  scene: Scene,
+  options: StudioLightingOptions = {},
+) {
   const environment = createStudioEnvironment();
   const generator = new PMREMGenerator(renderer);
   const environmentTarget = (() => {
@@ -113,11 +127,17 @@ export function createStudioLighting(renderer: WebGLRenderer, scene: Scene) {
   renderer.shadowMap.needsUpdate = true;
 
   const contact = createContactShadow(renderer, scene);
+  const backdrop = options.createBackdrop?.(scene);
+  if (backdrop) scene.background = backdrop.background;
   let disposed = false;
   return {
     setFilmLighting(sample: FilmSample | null, target = new Vector3(0, 4, 0)) {
       const light = sample?.light;
-      scene.background = light ? filmBackground.setRGB(...light.background) : null;
+      scene.background = backdrop
+        ? backdrop.background
+        : light
+          ? filmBackground.setRGB(...light.background)
+          : null;
       scene.environmentIntensity = light?.environment ?? STUDIO.environmentIntensity;
       scene.environmentRotation.y = (light?.sweep ?? 0) * 0.65;
       ambient.intensity = light?.ambient ?? 0.45;
@@ -139,7 +159,16 @@ export function createStudioLighting(renderer: WebGLRenderer, scene: Scene) {
       contact.floor.visible =
         enabled && filmFloor && cameraPosition.y > contact.floor.position.y + 0.1;
     },
-    renderContactShadow: contact.render,
+    renderContactShadow() {
+      // 墙地只作布景，不能作为接触阴影的投射物形成整片黑块。
+      const visible = backdrop?.root.visible;
+      try {
+        if (backdrop) backdrop.root.visible = false;
+        contact.render();
+      } finally {
+        if (backdrop) backdrop.root.visible = visible!;
+      }
+    },
     inspect() {
       return { contactUpdates: contact.updates, floorVisible: contact.floor.visible };
     },
@@ -150,6 +179,7 @@ export function createStudioLighting(renderer: WebGLRenderer, scene: Scene) {
       environmentTarget.dispose();
       key.shadow.dispose();
       contact.dispose();
+      backdrop?.dispose();
       rig.removeFromParent();
     },
   };

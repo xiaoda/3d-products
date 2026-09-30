@@ -28,7 +28,7 @@ import {
 } from '../model/createProduct';
 import { fitDistance } from './framing';
 import { CAMERA_PRESETS, SHOTS, type ShotName, type ViewName } from './cameraPresets';
-import { createStudioLighting, STUDIO } from './lighting';
+import { createStudioLighting, STUDIO, type StudioLightingOptions } from './lighting';
 import { GEOMETRY_VIEWS, type GeometryView } from './geometryViews';
 import { createMotionController } from '../interaction/controller';
 import { type MotionAction } from '../interaction/state';
@@ -47,6 +47,7 @@ export function createScene(
   host: HTMLElement,
   onManualView: () => void,
   onContextLost: () => void,
+  options: StudioLightingOptions = {},
 ) {
   const renderer = new WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
@@ -79,7 +80,7 @@ export function createScene(
       /Shell|Well|Rim|Bottom/.test(object.name) && !/Speaker|Sensor|Vent|Mic/.test(object.name);
     object.receiveShadow = !/Lattice|Sensor/.test(object.name);
   });
-  const studio = createStudioLighting(renderer, scene);
+  const studio = createStudioLighting(renderer, scene, options);
   const clay = new MeshStandardMaterial({
     color: 0xb8b9b6,
     roughness: 0.85,

@@ -29,12 +29,21 @@ import {
 } from '../interaction/explodedFilm';
 import { createExplodedPlayer } from '../interaction/explodedPlayer';
 import { createExplodedFraming, type ExplodedCameraFrame } from '../scene/explodedFilmCamera';
+import { createContactShadow } from '../scene/contactShadow';
+import {
+  createExplodedStudio,
+  EXPLODED_STUDIOS,
+  parseExplodedStudio,
+  type ExplodedStudioId,
+} from '../scene/explodedStudio';
 
 /** 独立产品展示：同步展开、全景、无画内标注，不影响原 A/B/C。 */
 export function mountExplodedEarbudReview() {
+  const initialStudio = parseExplodedStudio(new URLSearchParams(location.search).get('studio'));
   document.title = '耳机 · 8 秒定机位展开';
-  document.body.innerHTML = `<main class="exploded-review">
+  document.body.innerHTML = `<main class="exploded-review" data-studio="${initialStudio}">
     <header class="exploded-top"><div><p class="exploded-kicker">FORM IN MOTION</p><h1>耳机 · 流动的结构</h1></div><a href="/">返回产品展示 ↗</a></header>
+    <nav class="exploded-studio-picker" aria-label="背景方案，同帧对比">${EXPLODED_STUDIOS.map((preset) => `<button type="button" data-exploded-studio="${preset.id}" aria-pressed="${preset.id === initialStudio}"><span class="exploded-studio-swatch" aria-hidden="true"></span><strong>${preset.title}</strong><small>${preset.description}</small></button>`).join('')}</nav>
     <section class="exploded-stage-area" aria-label="耳机同步展开三维预览">
       <div class="exploded-stage"><div class="exploded-canvas" id="exploded-host"></div>
         <div class="exploded-error" role="alert" hidden><strong>三维预览暂时不可用</strong><p>请重新加载后重试，或检查浏览器是否支持 WebGL 2。</p><button type="button" id="exploded-retry">重新加载</button></div>
@@ -46,7 +55,7 @@ export function mountExplodedEarbudReview() {
         <div class="exploded-status-row"><p id="exploded-player-status" role="status">固定视角 · 展开停留 ${EXPLODED_HOLD_DURATION} 秒</p><span>拖动观察 / 空格播放</span></div>
       </div>
     </section>
-    <footer class="exploded-disclaimer">${EXPLODED_DISCLAIMER}。展开为断开连接的视觉示意，非实际拆卸路径。当前为动作预览，尚未导出视频。</footer>
+    <footer class="exploded-disclaimer">${EXPLODED_DISCLAIMER}。展开为断开连接的视觉示意，非实际拆卸路径。此页为动作预览，视频文件独立导出。</footer>
   </main>`;
   // The existing showroom stylesheet is global; the review owns a scrolling document.
   document.documentElement.style.overflow = 'auto';
@@ -69,7 +78,7 @@ export function mountExplodedEarbudReview() {
     error.hidden = false;
     document
       .querySelectorAll<HTMLButtonElement | HTMLInputElement>(
-        '[data-exploded-pose], #exploded-reset, .exploded-player button, .exploded-player input',
+        '[data-exploded-pose], [data-exploded-studio], #exploded-reset, .exploded-player button, .exploded-player input',
       )
       .forEach((b) => (b.disabled = true));
   };
@@ -142,6 +151,17 @@ export function mountExplodedEarbudReview() {
     const rim = new DirectionalLight(0xffffff, 1.85);
     rim.position.set(0, 5, -6);
     scene.add(new HemisphereLight(0xffffff, 0xc2c4c1, 0.42), key, fill, rim);
+    const studio = createExplodedStudio(scene);
+    studio.setPreset(initialStudio);
+    cleanups.push(() => studio.dispose());
+    const contact = createContactShadow(renderer, scene, {
+      groundY: studio.inspect().groundY,
+      surfaceOffset: 0.012,
+      extent: 10,
+      opacity: 0.22,
+      heightRange: 7,
+    });
+    cleanups.push(() => contact.dispose());
     // 初始化/fit 也会触发 render；首帧前必须分配 PCF 深度贴图。
     renderer.shadowMap.needsUpdate = true;
     const camera = new OrthographicCamera(-3, 3, 5, -5, 0.1, 100);
@@ -153,6 +173,7 @@ export function mountExplodedEarbudReview() {
     cleanups.push(() => controls.dispose());
     const viewDirection = new Vector3(-0.35, 0.2, 1).normalize();
     let filmSample: ExplodedFilmSample | null = null;
+    let shadowOpen: number | null = null;
     let raf = 0,
       lastTick = 0,
       manualCamera = false;
@@ -209,6 +230,10 @@ export function mountExplodedEarbudReview() {
     function applyFilm(time: number) {
       filmSample = sampleExplodedFilm(time);
       model.applyFilm(filmSample);
+      if (shadowOpen !== filmSample.open) {
+        contact.markDirty();
+        shadowOpen = filmSample.open;
+      }
       renderer.shadowMap.needsUpdate = true;
       scene.environmentRotation.y = filmSample.reflection;
       if (!manualCamera) {
@@ -289,7 +314,34 @@ export function mountExplodedEarbudReview() {
     });
     function render() {
       if (failed || disposed) return;
+      // 离屏投影只收集产品，不把摄影棚墙面和展台一起投成黑块。
+      const visible = studio.root.visible;
+      try {
+        studio.root.visible = false;
+        contact.render();
+      } finally {
+        studio.root.visible = visible;
+      }
       renderer.render(scene, camera);
+    }
+    function setStudio(id: ExplodedStudioId) {
+      if (failed || disposed) return;
+      studio.setPreset(id);
+      const selected = studio.inspect();
+      contact.setGroundY(selected.groundY);
+      document.querySelector<HTMLElement>('.exploded-review')!.dataset.studio = selected.id;
+      document
+        .querySelectorAll<HTMLElement>('[data-exploded-studio]')
+        .forEach((button) =>
+          button.setAttribute(
+            'aria-pressed',
+            String(button.dataset.explodedStudio === selected.id),
+          ),
+        );
+      const url = new URL(location.href);
+      url.searchParams.set('studio', selected.id);
+      history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
+      render();
     }
     function fit() {
       if (model.pose === 'exploded') {
@@ -343,6 +395,8 @@ export function mountExplodedEarbudReview() {
     function setPose(pose: ExplodedPose) {
       leaveFilm();
       model.setPose(pose);
+      shadowOpen = null;
+      contact.markDirty();
       renderer.shadowMap.needsUpdate = true;
       scene.environmentRotation.y = 0;
       document
@@ -385,6 +439,15 @@ export function mountExplodedEarbudReview() {
       },
       options,
     );
+    document
+      .querySelectorAll<HTMLElement>('[data-exploded-studio]')
+      .forEach((button) =>
+        button.addEventListener(
+          'click',
+          () => setStudio(parseExplodedStudio(button.dataset.explodedStudio ?? null)),
+          options,
+        ),
+      );
     document
       .querySelectorAll<HTMLElement>('[data-exploded-pose]')
       .forEach((el) =>
@@ -449,6 +512,7 @@ export function mountExplodedEarbudReview() {
       configurable: true,
       value: {
         setPose,
+        setStudio,
         seekFilm,
         playFilm: () => play(),
         pauseFilm: pause,
@@ -456,6 +520,8 @@ export function mountExplodedEarbudReview() {
           pose: model.pose,
           failed,
           schematic: true,
+          studio: studio.inspect(),
+          shadowUpdates: contact.updates,
           canvas: [canvas.width, canvas.height],
           calls: renderer.info.render.calls,
           triangles: renderer.info.render.triangles,

@@ -47,8 +47,58 @@
   align-items: center;
   gap: 20px;
 }
+.exploded-studio-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 620px;
+  margin: 0 auto 22px;
+}
+.exploded-review .exploded-studio-picker button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 13px 14px;
+  border-color: #d8dbd4;
+  border-radius: 3px;
+  text-align: left;
+  background: #ffffff55;
+}
+.exploded-studio-picker strong {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+.exploded-studio-picker small {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.exploded-review .exploded-studio-picker button[aria-pressed='true'] {
+  border-color: #748679;
+  background: #fffefa;
+  box-shadow: inset 0 -2px 0 #748679;
+}
+.exploded-studio-swatch {
+  position: absolute;
+  right: 13px;
+  top: 14px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fcfcf7, #bdc4bb);
+  border: 1px solid #26363012;
+}
+[data-exploded-studio='ice'] .exploded-studio-swatch {
+  background: linear-gradient(135deg, #f3fafc, #a9cadb);
+}
+[data-exploded-studio='gallery'] .exploded-studio-swatch {
+  background: linear-gradient(135deg, #fffaf0, #cfb996);
+}
 .exploded-stage {
-  width: min(460px, calc((100svh - 240px) * 0.5625));
+  width: min(460px, calc((100svh - 320px) * 0.5625));
   min-width: 340px;
   max-width: 100%;
   aspect-ratio: 9/16;
@@ -221,6 +271,27 @@
   }
   .exploded-stage-area {
     gap: 16px;
+  }
+  .exploded-studio-picker {
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .exploded-review .exploded-studio-picker button {
+    padding: 12px 8px 10px;
+  }
+  .exploded-studio-picker strong {
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+  .exploded-studio-picker small {
+    font-size: 9px;
+  }
+  .exploded-studio-swatch {
+    position: static;
+    width: 12px;
+    height: 6px;
+    border-radius: 2px;
+    margin-bottom: 2px;
   }
   .exploded-toolbar {
     margin-bottom: 12px;

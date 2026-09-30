@@ -15,21 +15,33 @@ import { HorizontalBlurShader } from 'three/addons/shaders/HorizontalBlurShader.
 import { VerticalBlurShader } from 'three/addons/shaders/VerticalBlurShader.js';
 
 /** 从实际几何离屏投影并模糊；只在装配/可见性改变时重绘，不是固定椭圆贴图。 */
-export function createContactShadow(renderer: WebGLRenderer, scene: Scene) {
+export function createContactShadow(
+  renderer: WebGLRenderer,
+  scene: Scene,
+  options: {
+    groundY?: number;
+    surfaceOffset?: number;
+    extent?: number;
+    opacity?: number;
+    heightRange?: number;
+  } = {},
+) {
   const size = 512,
-    extent = 14;
+    extent = options.extent ?? 14;
+  let groundY = options.groundY ?? 0;
   const target = new WebGLRenderTarget(size, size),
     scratch = new WebGLRenderTarget(size, size);
   target.texture.name = 'ProceduralContactShadow';
   const camera = new OrthographicCamera(-extent / 2, extent / 2, extent / 2, -extent / 2, 0.05, 12);
   // 从地面下看，优先捕获离地最近的表面；随离地高度降低阴影密度。
-  camera.position.set(0, -0.2, 0);
+  camera.position.set(0, groundY - 0.2, 0);
   camera.up.set(0, 0, 1);
-  camera.lookAt(0, 1, 0);
+  camera.lookAt(0, groundY + 1, 0);
   const depth = new ShaderMaterial({
     side: DoubleSide,
-    vertexShader: `varying float elevation; void main() { vec4 world = modelMatrix * vec4(position, 1.0); elevation = max(world.y, 0.0); gl_Position = projectionMatrix * viewMatrix * world; }`,
-    fragmentShader: `varying float elevation; void main() { float alpha = 1.0 - smoothstep(0.0, 9.0, elevation); gl_FragColor = vec4(vec3(1.0), alpha); }`,
+    uniforms: { groundY: { value: groundY }, heightRange: { value: options.heightRange ?? 9 } },
+    vertexShader: `uniform float groundY; varying float elevation; void main() { vec4 world = modelMatrix * vec4(position, 1.0); elevation = max(world.y - groundY, 0.0); gl_Position = projectionMatrix * viewMatrix * world; }`,
+    fragmentShader: `uniform float heightRange; varying float elevation; void main() { float alpha = 1.0 - smoothstep(0.0, heightRange, elevation); gl_FragColor = vec4(vec3(1.0), alpha); }`,
   });
   const horizontal = new ShaderMaterial({
     uniforms: UniformsUtils.clone(HorizontalBlurShader.uniforms),
@@ -55,7 +67,7 @@ export function createContactShadow(renderer: WebGLRenderer, scene: Scene) {
       map: target.texture,
       color: 0x514e47,
       transparent: true,
-      opacity: 0.42,
+      opacity: options.opacity ?? 0.42,
       depthWrite: false,
       side: DoubleSide,
       toneMapped: false,
@@ -63,13 +75,22 @@ export function createContactShadow(renderer: WebGLRenderer, scene: Scene) {
   );
   floor.name = 'StudioContactShadow';
   floor.rotation.x = Math.PI / 2;
-  floor.position.y = -0.02;
+  floor.position.y = groundY + (options.surfaceOffset ?? -0.02);
   scene.add(floor);
   let dirty = true,
     disposed = false,
     updates = 0;
   return {
     floor,
+    setGroundY(value: number) {
+      if (disposed || value === groundY) return;
+      groundY = value;
+      floor.position.y = groundY + (options.surfaceOffset ?? -0.02);
+      camera.position.y = groundY - 0.2;
+      camera.lookAt(0, groundY + 1, 0);
+      depth.uniforms.groundY.value = groundY;
+      dirty = true;
+    },
     markDirty() {
       dirty = true;
     },
